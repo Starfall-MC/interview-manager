@@ -1,0 +1,2 @@
+discord.py>=1.7.3
+# peewee>=3.14.4
