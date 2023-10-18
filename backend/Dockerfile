@@ -1,4 +1,4 @@
-FROM python:3.9.2
+FROM python:3.11-bookworm
 
 WORKDIR /
 ENTRYPOINT ["python3", "main.py"]

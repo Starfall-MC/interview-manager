@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: interview-manager-back
+
+spec:
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+
+  selector:
+    app: interview-manager-back
+
+---
+
+# Traefik-specific ingress, can configure custom Traefik props
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: interview-manager-back
+spec:
+  tls:
+    domains:
+      - main: interview.starfallmc.space
+  entryPoints:
+    - websecure
+  routes:
+  - match: Host(`interview.starfallmc.space`)
+    kind: Rule
+    services:
+    - name: interview-manager-back
+      port: web

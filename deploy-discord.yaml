@@ -1,0 +1,26 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: interview-manager-discord
+  labels:
+    app: interview-manager-discord
+
+spec:
+  selector:
+    matchLabels:
+      app: interview-manager-discord
+  template:
+    metadata:
+      labels:
+        app: interview-manager-discord
+    spec:
+      containers:
+        - name: interview-manager-discord
+          image: registry-starfallmc.danya02.ru/interview-manager/discord:v1
+          imagePullPolicy: Always
+          env:
+            - name: DISCORD_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: interview-manager-secrets
+                  key: discord_token
