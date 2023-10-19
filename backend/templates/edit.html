@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Interview Responses{% endblock %}
+
+{% block body %}
+    <div class="alert alert-info">
+    <p>Please write the answers to the following questions. When you're done, submit the answers below.</p>
+    <p>You cannot edit your answers after you submit the form.</p>
+    <!-- <p>The form is saved in the background, and you can return to it later.</p> -->
+    </div>
+
+    <form method="post">
+
+    {% for question in questions %}
+    <div class="card">
+        <div class="card-body">
+            <p>{{question['body']}}</p>
+            <textarea class="form-control" id="question-{{question['id']}}" class="{{'is-invalid' if validity.get(question['id']) else ''}}" name="question-{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
+            {% if validity.get(question['id']) %}
+                <div class="invalid-feedback">
+                    Please fix the following issues:
+                    <ul>
+                    {% for feedback in validity.get(question['id'], []) %}
+                        <li>{{feedback}}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#submitModal">Submit form</button>
+
+    <div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="submitModalLabel">Are you sure you want to submit?</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Once you submit the form, you will not be able to make any changes to it!
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <input type="submit" value="Submit form!">
+            </div>
+          </div>
+        </div>
+    </form>
+
+{% endblock %}

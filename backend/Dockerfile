@@ -1,10 +1,14 @@
 FROM python:3.11-bookworm
 
-WORKDIR /
+WORKDIR /app
 ENTRYPOINT ["python3", "main.py"]
 
-COPY requirements.txt /
-RUN pip3 install --no-cache -r /requirements.txt
+COPY requirements.txt .
+RUN pip3 install --no-cache -r ./requirements.txt
 
-COPY main.py /
-# Add other files here...
+ADD main.py .
+ADD database.py .
+ADD private.py .
+ADD public.py .
+ADD templates/ templates/
+RUN ["sanic", "main.py"]
