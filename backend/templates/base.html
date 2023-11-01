@@ -7,17 +7,15 @@
     <link href="https://static.starfallmc.space/style/main.css" rel="stylesheet" crossorigin="anonymous" />
   </head>
   <body>
-    <div class="container">
-        <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
-          <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
-            <span class="fs-4">Starfall MC Interviews</span>
-          </a>
-    
-          <span class="navbar-text">
-            {{ self.title() }}
-          </span>
-        </header>
-      </div>
+    <nav class="navbar bg-body-tertiary">
+        <a href="#" class="navbar-brand">
+        Starfall MC Interviews
+        </a>
+
+        <span class="navbar-text">
+        {{ self.title() }}
+        </span>
+    </nav>
 
       <div class="container">
         {% block body %}{% endblock %}

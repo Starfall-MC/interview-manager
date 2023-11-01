@@ -11,7 +11,8 @@ async def create_tables():
                      questions_json TEXT NOT NULL,
                      answers_json TEXT NOT NULL,
                      verdict TEXT,
-                     status INTEGER NOT NULL
+                     status INTEGER NOT NULL,
+                     status_changed_at_unix_time INTEGER NOT NULL
     )""")
 
     await db.execute("""CREATE TABLE IF NOT EXISTS modmail (

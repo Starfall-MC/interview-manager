@@ -3,9 +3,11 @@ import os
 import httpx
 import re
 import traceback
+from discord.ext import tasks
 
 
 token = os.getenv('DISCORD_TOKEN')
+
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -18,9 +20,7 @@ http = httpx.AsyncClient(
 def get_prop(name):
     return open(f'/config/{name}').read().strip()
 
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
+
 
 @client.event
 async def on_message(message: discord.Message):
@@ -63,13 +63,111 @@ async def on_message(message: discord.Message):
             traceback.print_exc()
         await message.reply(get_prop('interview-resend-chat'))
 
+@tasks.loop(seconds=15)
+async def process_modmail():
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    #await modmail_chan.send(f"Trying to process modmail...")
+    try:
+        r = await http.get('https://interview.starfallmc.space/modmail')
+        r.raise_for_status()
+        r = r.json()
+        for entry in r:
+            await modmail_chan.send(entry['content'], allowed_mentions=discord.AllowedMentions.all())
+            del_resp = await http.delete(f"https://interview.starfallmc.space/modmail/{entry['id']}")
+            del_resp.raise_for_status()
+    except Exception as e:
+        await modmail_chan.send(f"ERROR while fetching modmail: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
+        traceback.print_exc()
+        raise e
+
+@process_modmail.before_loop
+async def before_modmail():
+    print('waiting for bot to be ready before modmail...')
+    await client.wait_until_ready()
+    print("Ready, now working on modmail!")
+
+@tasks.loop(seconds=16)
+async def process_accepts_rejects():
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    guild = modmail_chan.guild
+    #await modmail_chan.send(f"Trying to process accepts/rejects...")
+    try:
+        #await modmail_chan.send(f"Trying to process accepts...")
+        r = await http.get('https://interview.starfallmc.space/pending/accept')
+        r.raise_for_status()
+        r = r.json()
+        for entry in r:
+            interview_chan = client.get_channel(entry['channel_id'])
+            if interview_chan is None:
+                await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to accept user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
 
 
+            # First, find the member and try to apply the accept role to them.
+            # If there is no member, send a mod mail, but also delete the pending record.
+            member = await guild.fetch_member(entry['user_id'])
+            if member is None:
+                await modmail_chan.send(f"@everyone Tried to assign accept role to <@{entry['user_id']}>, but could not find them in the server! They may have left. If not, please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
+                del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
+                del_resp.raise_for_status()
+                continue
+
+            accept_role = int(get_prop('accept-role'))
+            try:
+                await member.add_roles(discord.Object(accept_role))
+            except Exception as e:
+                await modmail_chan.send(f"@everyone Tried to give accept role to user <@{entry['user_id']}>, but failed: `{repr(e)}`\n Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
+                await interview_chan.send(get_prop("interview-accept-error"))
+                del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
+                del_resp.raise_for_status()
+                continue
+            
+            # Now that we have granted the role, we need to send the accept message.
+            await interview_chan.send(get_prop("interview-accept"))
+            await modmail_chan.send(f"Successfully accepted <@{entry['user_id']}>. The interview will remain available for future reference at: https://interviews.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
+            del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
+            del_resp.raise_for_status()
 
 
+        ######
 
+        #await modmail_chan.send(f"Trying to process rejects...")
+        r = await http.get('https://interview.starfallmc.space/pending/reject')
+        r.raise_for_status()
+        r = r.json()
+        for entry in r:
+            interview_chan = client.get_channel(entry['channel_id'])
+            if interview_chan is None:
+                await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to reject user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
+            
+            # Now that we have granted the role, we need to send the accept message.
+            await interview_chan.send(get_prop("interview-reject").replace('{{reason}}', entry['reason']))
+            await modmail_chan.send(f"Successfully rejected <@{entry['user_id']}>. The interview will remain available for future reference at: https://interviews.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
+            del_resp = await http.delete(f"https://interview.starfallmc.space/pending/reject/{entry['channel_id']}")
+            del_resp.raise_for_status()
+
+    except Exception as e:
+        await modmail_chan.send(f"ERROR while fetching accepts/rejects: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
+        traceback.print_exc()
+        raise e
+
+@process_accepts_rejects.before_loop
+async def before_accepts_rejects():
+    print('waiting for bot to be ready before accepts_rejects...')
+    await client.wait_until_ready()
+    print("Ready, now working on modmail!")
+
+
+@client.event
+async def on_ready():
+    print(f'We have logged in as {client.user}')
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 8")
+
+    process_modmail.add_exception_type(Exception)
+    process_modmail.start()
     
-
+    process_accepts_rejects.add_exception_type(Exception)
+    process_accepts_rejects.start()
 
 
 if __name__ == '__main__':

@@ -28,7 +28,7 @@ delete:
 	kubectl delete -f deploy-svc.yaml -f deploy-backend.yaml -f deploy-discord.yaml -f secrets.yaml -f discord-conf.yaml
 
 redeploy:
-	kubectl delete -f deploy-backend.yaml -f deploy-discord.yaml
+	kubectl delete -f deploy-backend.yaml -f deploy-discord.yaml; exit 0
 	make build
 	kubectl apply  -f deploy-backend.yaml -f deploy-discord.yaml
 

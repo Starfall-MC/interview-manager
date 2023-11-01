@@ -1,0 +1,26 @@
+{% extends 'view.html' %}
+
+{% block actions %}
+
+{% if can_set_verdict %}
+<h1>Please choose an action</h1>
+<div class="d-flex">
+    <div class="p-2 flex-fill">
+        <form method="POST">
+            <input type="hidden" name="action" value="accept">
+            <button class="btn btn-success" type="submit">Accept interview</button>
+        </form>
+    </div>
+    <div class="p-2 flex-fill">
+        <form method="POST">
+            <input type="hidden" name="action" value="reject">
+            <textarea class="form-control" name="verdict" rows="3" required placeholder="Reason for rejection"></textarea>
+            <button class="btn btn-danger" type="submit">Reject interview</button>
+        </form>
+    </div>
+</div>
+{% else %}
+    <p>You cannot set a verdict at this time, because: <code>{{why_no_verdict}}</code></p>
+{% endif %}
+
+{% endblock %}

@@ -3,6 +3,10 @@ kind: ConfigMap
 metadata:
   name: interview-manager-discord-config
 data:
+  modmail-channel: "1169273912048226445"
+
+  accept-role: "1155274601044115556"
+
   verify-activation-phrase: "verify meee"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
@@ -15,7 +19,8 @@ data:
   interview-resend-chat: "We have tried sending your interview link to you again. Type 'verify me' again to retry, or contact a moderator for help."
   
   interview-accept: "Your interview form has been accepted. You should now have the verified role on the server."
-  
+  interview-accept-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
+
   interview-reject: "Your interview form has been rejected for the following reason: {{reason}}"
 
   interview-questions: |-

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Interview Responses{% endblock %}
+
+{% block body %}
+    {% for question in questions %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <p>{{question['body']}}</p>
+            <textarea disabled readonly class="form-control" id="question-{{question['id']}}" name="question-{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
+        </div>
+    </div>
+    {% endfor %}
+
+    <hr />
+
+    <p>Latest status change: {{latest_change}}</p>
+
+    <p class="h2">Verdict:
+        <span class="{% if not verdict %}text-warning{% elif verdict['accept'] %}text-success{% else %}text-danger{% endif %}">
+            {% if not verdict %}Not yet evaluated{% elif verdict['accept'] %}Accepted{% else %}Rejected{% endif %}
+        </span>
+    </p>
+
+    {% if verdict['reason'] %}
+        <p><em>Reason: </em>{{verdict['reason']}}</p>
+    {% endif %}
+
+    {% block actions %}{% endblock %}
+
+
+{% endblock %}
