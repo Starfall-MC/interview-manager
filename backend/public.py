@@ -1,6 +1,6 @@
 import datetime
 import time
-from sanic.response import HTTPResponse, html
+from sanic.response import HTTPResponse, html, json as json_resp
 from sanic import Blueprint, Request
 import sanic
 import sanic_jinja2
@@ -75,11 +75,12 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
         async for row in cursor:
             data = row
     
-    user_id = data[1]
 
     if data is None:
         return jinja.render('form-404.html', request, 404)
     
+    user_id = data[1]
+
     edit_token = data[3]
     approve_token = data[4]
     status = data[8]
@@ -152,3 +153,36 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
 
     else:
         return jinja.render('form-404.html', request, 404)
+
+
+@bp.put('/<interview_id:int>/<token>')
+async def put_interview(request: Request, interview_id: int, token) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    data = None
+    async with db.execute("SELECT id, user_id, user_name, edit_token, approve_token, questions_json, answers_json, verdict, status FROM interview WHERE id=?", (interview_id,)) as cursor:
+        async for row in cursor:
+            data = row
+    
+
+    if data is None:
+        return json_resp("no such form", 404)
+
+    user_id = data[1]
+    edit_token = data[3]
+    approve_token = data[4]
+    status = data[8]
+
+    if token == edit_token:
+        if status != InterviewStatus.WAITING_FOR_USER_TO_SUBMIT:
+            json_resp('form not editable', 400)
+
+        answers = request.json
+        new_status = InterviewStatus.WAITING_FOR_USER_TO_SUBMIT
+
+        await db.execute("UPDATE interview SET status=?, status_changed_at_unix_time=?, answers_json=? WHERE id=?", (new_status, int(time.time()), json.dumps(answers), interview_id))
+        await db.commit()
+
+        return json_resp('ok')
+    else:
+        return json_resp('no such form', 404)
