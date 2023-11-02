@@ -143,7 +143,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
         else:
             new_status = InterviewStatus.VERDICT_REJECT_NOT_SENT
             status_word = f'REJECTED with reason: {reason}'
-            verdict = {'accept': True, 'reason': reason}
+            verdict = {'accept': False, 'reason': reason}
 
         content = f"<@{user_id}>'s interview is now {status_word}, waiting for change to be propagated..."
         await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
