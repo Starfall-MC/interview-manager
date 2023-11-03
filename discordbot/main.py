@@ -123,7 +123,7 @@ async def process_accepts_rejects():
             
             # Now that we have granted the role, we need to send the accept message.
             await interview_chan.send(get_prop("interview-accept"))
-            await modmail_chan.send(f"Successfully accepted <@{entry['user_id']}>. The interview will remain available for future reference at: https://interviews.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
+            await modmail_chan.send(f"Successfully accepted <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
             del_resp.raise_for_status()
 
@@ -141,7 +141,7 @@ async def process_accepts_rejects():
             
             # Now that we have granted the role, we need to send the accept message.
             await interview_chan.send(get_prop("interview-reject").replace('{{reason}}', entry['reason']))
-            await modmail_chan.send(f"Successfully rejected <@{entry['user_id']}>. The interview will remain available for future reference at: https://interviews.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
+            await modmail_chan.send(f"Successfully rejected <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/reject/{entry['channel_id']}")
             del_resp.raise_for_status()
 
