@@ -17,6 +17,9 @@
 
     
     <p id="save-status-top"></p>
+    <script>
+        document.getElementById("save-status-top").innerHTML = 'Listening for changes...';
+    </script>
 
     <form method="post">
 
@@ -24,7 +27,26 @@
     <div class="card mb-3">
         <div class="card-body">
             <p>{{question['body']}}</p>
-            <textarea class="question-field form-control {{'is-invalid' if validity.get(question['id']) else ''}}" id="question-{{question['id']}}" name="question-{{question['id']}}" data-question-id="{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
+            
+            {% if question['kind'] == 'radio'%}
+                {% for option in question['options'] %}
+                <div class="form-check mb-2">
+                    <input data-question-id="{{question['id']}}" data-check-option-id="{{option['id']}}" type="radio" name="question-{{question['id']}}" value="{{option['id']}}" class="question-radio-field" id="radio-{{question['id']}}-{{option['id']}}" {{ 'checked' if answers[question['id']] == option['id'] else '' }} required>
+                    <label class="form-check-label" for="radio-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
+                </div>
+                {% endfor %}
+            {% elif question['kind'] == 'check'%}
+                {% for option in question['options'] %}
+                <div class="form-check mb-2">
+                    <input data-question-id="{{question['id']}}" data-check-option-id="{{option['id']}}" type="checkbox" name="question-{{question['id']}}-{{option['id']}}" value="1" class="question-check-field" id="check-{{question['id']}}-{{option['id']}}" {{ 'checked' if answers.get(question['id'] + '-' + option['id']) else '' }}>
+                    <label class="form-check-label" for="check-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
+                </div>
+                {% endfor %}
+            {% else %}
+            <textarea class="question-text-field form-control {{'is-invalid' if validity.get(question['id']) else ''}}" id="question-{{question['id']}}" name="question-{{question['id']}}" data-question-id="{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
+            {% endif %}
+
+
             {% with errors = validity[question['id']] %}
                 {% if errors %}
                 <div class="invalid-feedback">
@@ -44,56 +66,91 @@
     {% endfor %}
 
     <p id="save-status-bot"></p>
+    <script>
+        document.getElementById("save-status-bot").innerHTML = 'Listening for changes...';
+    </script>
 
     <script>
-        var elements = document.getElementsByClassName("question-field");
-        for (var i = 0; i < elements.length; i++) {
-            elements[i].oninput = function() {
-                document.getElementById("save-status-top").innerHTML = '<span class="text-warning">Not saved yet...</span>';
-                document.getElementById("save-status-bot").innerHTML = '<span class="text-warning">Not saved yet...</span>';
-            };
-            elements[i].onchange = function() {
-                document.getElementById("save-status-top").innerHTML = '<span class="text-warning">Saving...</span>';
-                document.getElementById("save-status-bot").innerHTML = '<span class="text-warning">Saving...</span>';
+        var commit = function() {
+            document.getElementById("save-status-top").innerHTML = '<span class="text-warning">Saving...</span>';
+            document.getElementById("save-status-bot").innerHTML = '<span class="text-warning">Saving...</span>';
 
-                // Build the data to save
-                var textareas = document.querySelectorAll('textarea[data-question-id]');
-                var data = {};
-                var textContents = Array.from(textareas).map(function(textarea) {
-                    var questionId = textarea.getAttribute('data-question-id');
-                    var value = textarea.value;
-                    
-                    data[questionId] = value;
-                });
+            // Build the data to save
+            var textareas = document.querySelectorAll('.question-text-field[data-question-id]');
+            var data = {};
+            Array.from(textareas).map(function(textarea) {
+                var questionId = textarea.getAttribute('data-question-id');
+                var value = textarea.value;
+                
+                data[questionId] = value;
+            });
 
-                // Now send it
-                var url = window.location.href;
+            var radios = document.querySelectorAll('.question-radio-field[data-question-id]');
+            Array.from(radios).map(function(radio) {
+                var questionId = radio.getAttribute('data-question-id');
+                if (radio.checked) {
+                    var value = radio.value;
+                    data[questionId] = radio.getAttribute('data-check-option-id');
+                }
+            });
 
-                fetch(url, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(function(response) {
-                        if (response.ok) {
-                            document.getElementById("save-status-top").innerHTML = '<span class="text-success">All changes saved!</span>';
-                            document.getElementById("save-status-bot").innerHTML = '<span class="text-success">All changes saved!</span>';
+            var checks = document.querySelectorAll('.question-check-field[data-question-id]');
+            Array.from(checks).map(function(check) {
+                var questionId = check.getAttribute('data-question-id');
+                var value = check.getAttribute('data-check-option-id');
+                data[questionId + "-" + value] = check.checked;                
+            });
 
-                        } else {
-                            console.log("Error saving", response);
-                            document.getElementById("save-status-top").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
-                            document.getElementById("save-status-bot").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
-                        }
-                    })
-                    .catch(function(error) {
-                        console.log("Error saving", error);
+
+            // Now send it
+            var url = window.location.href;
+
+            fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(function(response) {
+                    if (response.ok) {
+                        document.getElementById("save-status-top").innerHTML = '<span class="text-success">All changes saved!</span>';
+                        document.getElementById("save-status-bot").innerHTML = '<span class="text-success">All changes saved!</span>';
+
+                    } else {
+                        console.log("Error saving", response);
                         document.getElementById("save-status-top").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
                         document.getElementById("save-status-bot").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
-                    });
+                    }
+                })
+                .catch(function(error) {
+                    console.log("Error saving", error);
+                    document.getElementById("save-status-top").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
+                    document.getElementById("save-status-bot").innerHTML = '<span class="text-danger">Failed to save changes!</span>';
+                });
+        };
+
+        var elements = document.getElementsByClassName("question-text-field");
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].oninput = function() {
+                document.getElementById("save-status-top").innerHTML = '<span class="text-warning">Not saved yet... <span class="spinner-border-sm text-warning" role="status"><span class="visually-hidden">Saving...</span></span></span>';
+                document.getElementById("save-status-bot").innerHTML = '<span class="text-warning">Not saved yet... <span class="spinner-border-sm text-warning" role="status"><span class="visually-hidden">Saving...</span></span></span>';
             };
+            elements[i].onchange = commit;
         }
+
+        var elements = document.getElementsByClassName("question-check-field");
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].onclick = commit;
+        }
+
+        var elements = document.getElementsByClassName("question-radio-field");
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].onclick = commit;
+        }
+
+
+
     </script>
 
     <noscript>

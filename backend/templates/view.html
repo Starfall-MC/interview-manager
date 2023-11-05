@@ -7,7 +7,24 @@
     <div class="card mb-3">
         <div class="card-body">
             <p>{{question['body']}}</p>
+            {% if question['kind'] == 'radio'%}
+                {% for option in question['options'] %}
+                <div class="form-check mb-2">
+                    <input disabled data-question-id="{{question['id']}}" data-check-option-id="{{option['id']}}" type="radio" name="question-{{question['id']}}" value="{{option['id']}}" class="question-radio-field" id="radio-{{question['id']}}-{{option['id']}}" {{ 'checked' if answers[question['id']] == option['id'] else '' }} required>
+                    <label class="form-check-label" for="radio-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
+                </div>
+                {% endfor %}
+            {% elif question['kind'] == 'check'%}
+                {% for option in question['options'] %}
+                <div class="form-check mb-2">
+                    <input disabled data-question-id="{{question['id']}}" data-check-option-id="{{option['id']}}" type="checkbox" name="question-{{question['id']}}-{{option['id']}}" value="1" class="question-check-field" id="check-{{question['id']}}-{{option['id']}}" {{ 'checked' if answers.get(question['id'] + '-' + option['id']) else '' }}>
+                    <label class="form-check-label" for="radio-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
+                </div>
+                {% endfor %}
+            {% else %}
             <textarea disabled readonly class="form-control" id="question-{{question['id']}}" name="question-{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
+            {% endif %}
+
         </div>
     </div>
     {% endfor %}

@@ -4,9 +4,7 @@ metadata:
   name: interview-manager-discord-config
 data:
   modmail-channel: "1169273912048226445"
-
   accept-role: "1155274601044115556"
-
   verify-activation-phrase: "verify meee"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
@@ -24,8 +22,30 @@ data:
   interview-reject: "Your interview form has been rejected for the following reason: {{reason}}"
 
   interview-questions: |-
-    This is question number 1. It accepts any number of characters.
-    This is question number 2. It accepts at most 10 characters. --- 0-10
-    This is question number 3. It accepts at least 10 characters. --- 10-0
-    This is question number 4. It accepts between 10 and 20 characters, inclusive. --- 10-20
-    This is question number 5. It accepts exactly 5 characters. --- 5-5
+    Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
+    What is your Minecraft username? --- 1-0
+    How old are you? --- (.) Under 15 (.) 15 to 18 (.) 18+
+    Do you have any friends in this Discord Server?
+    Why do you want to join our server? --- 20-0
+    How did you hear about our Discord server? --- [.] Friends [.] Discord Server Search [.] Something else
+    If you heard about our Discord server elsewhere, please write this here.
+    Do you have any prior experience with Discord communities or similar servers? --- 2-0
+    Have you ever been banned or faced disciplinary action on another Discord server?  Please be honest, we want to learn about you! --- (.) Yes (Does not automatically disqualify you!) (.) No (Does not automatically qualify you!)
+    If you have faced disciplinary action, can you please explain the circumstances?
+    Have you read and do you agree to abide by our server rules and guidelines? --- (.) Yes, I read everything and will abide by the rules. (.) I read the rules but I've got some questions and would like to talk with an admin! (.) I skimmed through and it seems about normal. (.) Not really... (If this is your answer - maybe take a break from this and go catch up!)
+    What's the server's main rule that stands out to you the most? --- 10-0
+    If you heard someone say a slur in a call but you didn't know who, what would you do? --- 10-0
+    Do you have any roleplay experiences? (ie; roleplay, ttrpg, etc.) --- 2-0
+    Have you ever been in a Lore SMP before? --- 2-0
+    Do you prefer to play in groups or by yourself? If you're a solo player, are you willing to play in groups? --- [.] Solo and prefer to not interact with others [.] Solo but working in collaboration with others [.] Group play but we're all doing our own things [.] Group play where we all help each other and sometimes do our own things [.] Completely collaborative group play - family style gaming
+    Members are encouraged to be apart of the community, how often would you be available to play? --- [.] Most months I'd only have a couple days to play and hangout in Minecraft and the server [.] Only a few days a month of time in Minecraft, but I'd be active in the server throughout the month [.] I've got a couple days a week that I'd be on for a few hours in the server and/or in Minecraft [.] I'll likely be on several to many days a week in the server and/or in Minecraft [.] I will live in this server and be in Minecraft all the time [.] You can't get rid of me - *Needs to go touch grass* 😅
+    What's the one thing you hope to contribute to or gain from our community and why? --- 10-0
+    Can you briefly describe your gaming / streaming / interest background? --- 10-0
+    What type of player are you? --- [.] The Zookeeper - “Gotta catch em all” [.] Flower Picker - "I'll grab one of these, and one of those, and one of these..." [.] The Hoarder - "Never know when you'll need a..." [.] The Helper - "Do you need some help?" [.] The Farmer - "Got enough food?" [.] The Cook - "Need some food?" [.] The Medic - "PLAYER DOWN" [.] The Warrior - Guardians and Picking Fights with Bosses! [.] The Adventurer - "I know where that is!" [.] The Decorator - Beautifying Everything! [.] The Pro (Speedrunner) - Miles ahead of everyone! [.] The Villager Master - "Let's make a trade!" [.] The Builder - A proper space for everything! [.] The Big Builder - "HOW DID YOU EVEN MAKE THAT?" [.] The Redstoner - Automated Everything! [.] The Achiever - Full Completion!
+    Would you like to elaborate on your style of gameplay? 
+    Do you have any specific skills or talents that you'd like to contribute to our community? --- 10-0
+    What do you enjoy doing in your free time, apart from our server's theme? --- 10-0
+    Share an interesting fact about yourself that's unrelated to our server's theme. --- 10-0
+    Can you give us an idea of what kind of personality you have? --- [.] Ambitious and Competetive! [.] "Smell the Roses" and "Enjoy the Journey!" [.] Independent and Organized! [.] Shy, Calm, and Caring! [.] Extroverted (Prefers to be around others!) [.] Introverted (Prefers to be alone!) [.] Patient and Ready for hard work! [.] People Pleaser 😅
+    Are you a content creator or streamer? If so, share a link to your channel/profile.
+    Is there anything we didn't ask but you'd like to share? --- 5-0

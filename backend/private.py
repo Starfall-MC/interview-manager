@@ -1,3 +1,4 @@
+import re
 from sanic.response import HTTPResponse, json as resp_json
 from sanic import Blueprint, Request
 import sanic
@@ -75,21 +76,47 @@ def get_questions():
     for q in open('/config/interview-questions').readlines():
         q = q.strip()
         if '---' not in q:
-            questions.append({'id': str(len(questions)), 'body': q, 'constraints': None})
+            questions.append({'id': str(len(questions)), 'body': q, 'kind': 'text', 'constraints': None})
         else:
             q_body, _, desc = q.rpartition('---')
+            desc = desc.strip()
             q = {'id': str(len(questions)), 'body': q_body}
-            c = []
-            l,r = desc.split('-')
-            l = int(l)
-            r = int(r)
-            if l:
-                c.append({'kind':'len_above', 'value': l})
-            if r:
-                c.append({'kind':'len_below', 'value': r})
-            q['constraints'] = c or None
-            questions.append(q)
-    
+            if re.match(r'^\d*-\d*$', desc):
+                q['kind'] = 'text'
+                c = []
+                l,r = desc.split('-')
+                l = int(l or '0')
+                r = int(r or '0')
+                if l:
+                    c.append({'kind':'len_above', 'value': l})
+                if r:
+                    c.append({'kind':'len_below', 'value': r})
+                q['constraints'] = c or None
+                questions.append(q)
+            elif re.match(r'^(:?\(\.\) .+?)+$', desc):
+                q['kind'] = 'radio'
+                opts = []
+                for entry in desc.split('(.)'):
+                    if not entry: continue
+                    opts.append({
+                        'id': str(len(opts)),
+                        'name': entry,
+                    })
+                q['options'] = opts
+                questions.append(q)
+
+            elif re.match(r'^(:?\[\.\] .+?)+$', desc):
+                q['kind'] = 'check'
+                opts = []
+                for entry in desc.split('[.]'):
+                    if not entry: continue
+                    opts.append({
+                        'id': str(len(opts)),
+                        'name': entry,
+                    })
+                q['options'] = opts
+                questions.append(q)
+
     return questions
 
 @bp.get("/pending/accept")

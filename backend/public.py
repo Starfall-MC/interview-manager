@@ -96,7 +96,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
             answers[question['id']] = answer = request.form.get(f'question-{question["id"]}', '')
             
             # Run validations
-            for constraint in question['constraints'] or []:
+            for constraint in question.get('constraints') or []:
                 if constraint['kind'] == 'len_above':
                     if len(answer) < constraint['value']:
                         validity[question['id']] = validity.get(question['id'], []) + [f"The answer to this must be {constraint['value']} letters or longer"]
@@ -105,6 +105,16 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
                         validity[question['id']] = validity.get(question['id'], []) + [f"The answer to this must be {constraint['value']} letters or shorter"]
                 else:
                     print("!! Unknown constraint kind:", constraint)
+            if question['kind'] == 'radio':
+                if not answer:
+                    validity[question['id']] = validity.get(question['id'], []) + 'You must choose one of these options.'
+            if question['kind'] == 'check':
+                del answers[question['id']]
+                for option in question['options']:
+                    if request.form.get(f'question-{question["id"]}-{option["id"]}'):
+                        answers[question['id'] + '-' + option['id']] = True
+                    else:
+                        answers[question['id'] + '-' + option['id']] = False
 
 
         # Validations run and answers built
