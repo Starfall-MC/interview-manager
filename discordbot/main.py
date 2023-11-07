@@ -116,13 +116,19 @@ async def process_accepts_rejects():
                 await member.add_roles(discord.Object(accept_role))
             except Exception as e:
                 await modmail_chan.send(f"@everyone Tried to give accept role to user <@{entry['user_id']}>, but failed: `{repr(e)}`\n Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
-                await interview_chan.send(get_prop("interview-accept-error"))
+                await interview_chan.send(
+                    content='@everyone', allowed_mentions=discord.AllowedMentions.all(),
+                    embed=discord.Embed(color=discord.Color.green(), title="Interview accepted with error", description=get_prop("interview-accept-error"))
+                )
                 del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
                 del_resp.raise_for_status()
                 continue
             
             # Now that we have granted the role, we need to send the accept message.
-            await interview_chan.send(get_prop("interview-accept"))
+            await interview_chan.send(
+                content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
+                embed=discord.Embed(color=discord.Color.green(), title="Interview accepted", description=get_prop("interview-accept"))
+            )
             await modmail_chan.send(f"Successfully accepted <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
             del_resp.raise_for_status()
@@ -139,8 +145,10 @@ async def process_accepts_rejects():
             if interview_chan is None:
                 await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to reject user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
             
-            # Now that we have granted the role, we need to send the accept message.
-            await interview_chan.send(get_prop("interview-reject").replace('{{reason}}', entry['reason']))
+            await interview_chan.send(
+                content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
+                embed=discord.Embed(color=discord.Color.red(), title="Interview rejected", description=get_prop("interview-reject").replace('{{reason}}', entry['reason']))
+            )
             await modmail_chan.send(f"Successfully rejected <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/reject/{entry['channel_id']}")
             del_resp.raise_for_status()
@@ -161,7 +169,7 @@ async def before_accepts_rejects():
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 8")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 9")
 
     process_modmail.add_exception_type(Exception)
     process_modmail.start()

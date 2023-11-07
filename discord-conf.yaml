@@ -19,7 +19,9 @@ data:
   interview-accept: "Your interview form has been accepted. You should now have the verified role on the server."
   interview-accept-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
 
-  interview-reject: "Your interview form has been rejected for the following reason: {{reason}}"
+  interview-reject: |-
+      Your interview form has been rejected for the following reason:
+      > {{reason}}
 
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
