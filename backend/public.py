@@ -1,15 +1,23 @@
 import datetime
 import time
+import traceback
 from sanic.response import HTTPResponse, html, json as json_resp
 from sanic import Blueprint, Request
 import sanic
 import sanic_jinja2
 import aiosqlite
 import json
+import mojang
+import mcrcon
+import asyncio
 from database import InterviewStatus
 
 
 bp = Blueprint('public')
+
+def get_secret_prop(name):
+    return open(f'/secrets/{name}').read().strip()
+
 
 @bp.get('/')
 def index(request: Request) -> HTTPResponse:
@@ -47,14 +55,18 @@ async def render_interview(request: Request, interview_id: int, token) -> HTTPRe
         why_no_verdict = f'Unknown reason (status = {status})'
         if status == InterviewStatus.WAITING_FOR_USER_TO_SUBMIT:
             why_no_verdict = 'The user has not submitted the interview yet'
-        elif status == InterviewStatus.VERDICT_ACCEPT_APPLIED:
-            why_no_verdict = 'This interview has already been accepted, and the user is now granted the role on the server'
-        elif status == InterviewStatus.VERDICT_ACCEPT_NOT_APPLIED:
-            why_no_verdict = 'This interview has already been accepted, waiting for Discord bot to apply role...'
+        elif status == InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_NOT_APPLIED:
+            why_no_verdict = 'This interview has already been accepted, Minecraft not whitelisted (because of error), and the user is now granted the role on the server'
+        elif status == InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED:
+            why_no_verdict = 'This interview has already been accepted, Minecraft not whitelisted (because of error), waiting for Discord bot to apply role...'
         elif status == InterviewStatus.VERDICT_REJECT_NOT_SENT:
             why_no_verdict = 'This interview has already been rejected, waiting for Discord bot to send rejection message...'
         elif status == InterviewStatus.VERDICT_REJECT_SENT:
             why_no_verdict = 'This interview has already been rejected, and the Discord bot has already sent rejection message'
+        elif status == InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED:
+            why_no_verdict = 'This interview has already been accepted, Minecraft is whitelisted, waiting for Discord bot to apply role...'
+        elif status == InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_APPLIED:
+            why_no_verdict = 'This interview has already been accepted, Minecraft is whitelisted, and the user is now granted the role on the server'
         return jinja.render('view-act.html', request, questions=questions, answers=answers, verdict=verdict,
                             latest_change=latest_change, can_set_verdict=can_set_verdict, why_no_verdict=why_no_verdict)
 
@@ -84,12 +96,13 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
     edit_token = data[3]
     approve_token = data[4]
     status = data[8]
+    questions = json.loads(data[5])
+    answers = json.loads(data[6])
 
     if token == edit_token:
         if status != InterviewStatus.WAITING_FOR_USER_TO_SUBMIT:
             return html("You have tried submitting a form when it was already submitted. Please open this page again to see the current state of the form.")
 
-        questions = json.loads(data[5])
         answers = {}
         validity = dict()
         for question in questions:
@@ -103,6 +116,20 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
                 elif constraint['kind'] == 'len_below':
                     if len(answer) > constraint['value']:
                         validity[question['id']] = validity.get(question['id'], []) + [f"The answer to this must be {constraint['value']} letters or shorter"]
+                elif constraint['kind'] == 'minecraftname':
+                    if not answer:
+                        validity[question['id']] = validity.get(question['id'], []) + [f"Minecraft usernames must not be empty"]
+                        continue
+                    if not answer.isascii():
+                        validity[question['id']] = validity.get(question['id'], []) + [f"Minecraft usernames must be ASCII-only (Latin letters and numbers)"]
+                        continue
+
+                    api = mojang.API()
+                    loop = asyncio.get_event_loop()
+                    try:
+                        await loop.run_in_executor(None, lambda: api.get_uuid(answer))
+                    except Exception as e:
+                        validity[question['id']] = validity.get(question['id'], []) + [f"Mojang's auth server could not find this username: {e}"]
                 else:
                     print("!! Unknown constraint kind:", constraint)
             if question['kind'] == 'radio':
@@ -147,15 +174,48 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
         
 
         if action == 'accept':
-            new_status = InterviewStatus.VERDICT_ACCEPT_NOT_APPLIED
-            status_word = 'ACCEPTED'
-            verdict = {'accept': True, 'reason': None}
+            # Find the minecraft username question: kind=text and constraints has minecraftname
+            mc_username = None
+            for q in questions:
+                if mc_username: break
+                if q['kind'] == 'text':
+                    for c in q.get('constraints', []):
+                        if mc_username: break
+                        if c['kind'] == 'minecraftname':
+                            # Found the question, now get the answer
+                            mc_username = answers[q['id']]
+
+            if mc_username:
+                def whitelist_in_minecraft():
+                    with mcrcon.MCRcon(get_secret_prop('rcon_host'), get_secret_prop('rcon_password'), port=int(get_secret_prop('rcon_port'))) as mcr:
+                        resp = mcr.command(f"/whitelist add {mc_username}").strip()
+                        if resp not in [f'Added {mc_username} to the whitelist', 'Player is already whitelisted']:
+                            raise ValueError(f"Unexpected response to whitelist command: {repr(resp)}")
+                        mcr.command(f"/say A moderator has just accepted an interview: {mc_username} is now whitelisted")
+
+                loop = asyncio.get_event_loop()
+                try:
+                    whitelist_in_minecraft() # Cannot run this in executor because it uses signal, which can only be used in main thread
+                    new_status = InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED
+                    status_word = 'ACCEPTED and Minecraft whitelist OK'
+                    verdict = {'accept': True, 'reason': None}
+
+                except Exception as e:
+                    traceback.print_exc()
+                    new_status = InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED
+                    status_word = 'ACCEPTED, but Minecraft whitelist ERROR @everyone: ' + str(e)
+                    verdict = {'accept': True, 'reason': None}
+            else:
+                # There is no mc username, so nothing to do
+                new_status = InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED  # applied, because not-applied means error
+                status_word = 'ACCEPTED with no Minecraft action needed'
+                verdict = {'accept': True, 'reason': None}
         else:
             new_status = InterviewStatus.VERDICT_REJECT_NOT_SENT
-            status_word = f'REJECTED with reason: {reason}'
+            status_word = f'REJECTED with reason: `{reason}`'
             verdict = {'accept': False, 'reason': reason}
 
-        content = f"<@{user_id}>'s interview is now {status_word}, waiting for change to be propagated..."
+        content = f"<@{user_id}>'s interview is now {status_word}"
         await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
         await db.execute("UPDATE interview SET status=?, status_changed_at_unix_time=?, verdict=? WHERE id=?", (new_status, int(time.time()), json.dumps(verdict), interview_id))
         await db.commit()

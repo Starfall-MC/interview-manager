@@ -41,7 +41,6 @@ async def del_modmail(request: Request, id: int) -> HTTPResponse:
 async def new_interview(request: Request) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db
 
-
     channel_id = request.json['channel_id']
     user_id = request.json['user_id']
     user_name = request.json['user_name']
@@ -116,6 +115,10 @@ def get_questions():
                     })
                 q['options'] = opts
                 questions.append(q)
+            elif 'MINECRAFTNAME' in desc:
+                q['kind'] = 'text'
+                q['constraints'] = [{'kind': 'minecraftname'}]
+                questions.append(q)
 
     return questions
 
@@ -123,15 +126,16 @@ def get_questions():
 async def pending_accepts(request: Request) -> HTTPResponse:
     entries = []
     db: aiosqlite.Connection = request.app.ctx.db
-    async with db.execute("SELECT id, user_id, approve_token FROM interview WHERE status=?", (InterviewStatus.VERDICT_ACCEPT_NOT_APPLIED,)) as cursor:
+    async with db.execute("SELECT id, user_id, approve_token, status FROM interview WHERE status=? OR status=?", (InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED, InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED)) as cursor:
         async for row in cursor:
-            entries.append({'channel_id': row[0], 'user_id': row[1], 'token': row[2]})
+            entries.append({'channel_id': row[0], 'user_id': row[1], 'token': row[2], 'minecraft_ok': row[3] == InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED})
     return resp_json(entries)
 
 @bp.delete("/pending/accept/<id:int>")
 async def del_pending_accept(request: Request, id: int) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db
-    await db.execute("UPDATE interview SET status=? WHERE id=? AND status=?", (InterviewStatus.VERDICT_ACCEPT_APPLIED, id, InterviewStatus.VERDICT_ACCEPT_NOT_APPLIED))
+    await db.execute("UPDATE interview SET status=? WHERE id=? AND status=?", (InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_NOT_APPLIED, id, InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED))
+    await db.execute("UPDATE interview SET status=? WHERE id=? AND status=?", (InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_APPLIED, id, InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED))
     await db.commit()
     return resp_json('ok')
 

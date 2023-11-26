@@ -34,6 +34,10 @@ spec:
             - name: config
               mountPath: "/config"
               readOnly: true
+            - name: secrets
+              mountPath: "/secrets"
+              readOnly: true
+
       volumes:
         - name: db-volume
           persistentVolumeClaim:
@@ -41,6 +45,9 @@ spec:
         - name: config
           configMap:
             name: interview-manager-discord-config
+        - name: secrets
+          secret:
+            secretName: interview-manager-secrets
 
 
 ---

@@ -97,6 +97,7 @@ async def process_accepts_rejects():
         r.raise_for_status()
         r = r.json()
         for entry in r:
+            minecraft_ok = entry['minecraft_ok']
             interview_chan = client.get_channel(entry['channel_id'])
             if interview_chan is None:
                 await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to accept user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
@@ -118,17 +119,29 @@ async def process_accepts_rejects():
                 await modmail_chan.send(f"@everyone Tried to give accept role to user <@{entry['user_id']}>, but failed: `{repr(e)}`\n Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
                 await interview_chan.send(
                     content='@everyone', allowed_mentions=discord.AllowedMentions.all(),
-                    embed=discord.Embed(color=discord.Color.green(), title="Interview accepted with error", description=get_prop("interview-accept-error"))
+                    embed=discord.Embed(color=discord.Color.green(), title="Interview accepted with error", description=get_prop("interview-accept-role-error"))
                 )
+                if not minecraft_ok:
+                    await interview_chan.send(
+                        content='@everyone', allowed_mentions=discord.AllowedMentions.all(),
+                        embed=discord.Embed(color=discord.Color.yellow(), title="Interview accepted with Minecraft error", description=get_prop("interview-accept-minecraft-error"))
+                    )
+
                 del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
                 del_resp.raise_for_status()
                 continue
             
             # Now that we have granted the role, we need to send the accept message.
-            await interview_chan.send(
-                content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
-                embed=discord.Embed(color=discord.Color.green(), title="Interview accepted", description=get_prop("interview-accept"))
-            )
+            if not minecraft_ok:
+                await interview_chan.send(
+                    content='@everyone', allowed_mentions=discord.AllowedMentions.all(),
+                    embed=discord.Embed(color=discord.Color.yellow(), title="Interview accepted with Minecraft error", description=get_prop("interview-accept-minecraft-error"))
+                )
+            else:
+                await interview_chan.send(
+                    content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
+                    embed=discord.Embed(color=discord.Color.green(), title="Interview accepted", description=get_prop("interview-accept"))
+                )
             await modmail_chan.send(f"Successfully accepted <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/accept/{entry['channel_id']}")
             del_resp.raise_for_status()

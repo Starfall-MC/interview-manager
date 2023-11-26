@@ -8,16 +8,17 @@ data:
   verify-activation-phrase: "verify me"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
-  interview-created-chat-prompt: "Your interview form is now ready. Please follow the link sent to your direct messages. If you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help. If you encounter any issues with the beta version, also feel free to contact us."
+  interview-created-chat-prompt: "Thank you for your interest in joining our server! Your interview form is now ready. Please follow the link sent to your direct messages. If you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help. If you encounter any issues with the beta version, also feel free to contact us."
   
-  interview-created-dm-error-chat-prompt: "Your interview form is now ready, but we could not send you a direct message with the link. Please ensure that your DMs are enabled, then type 'verify me' again; or contact a moderator for help."
+  interview-created-dm-error-chat-prompt: "Thank you for your interest in joining our server!  Your interview form is now ready, but **we could not send you a direct message** with the link. Please ensure that your DMs are enabled, then type 'verify me' again; or contact a moderator for help."
 
   interview-dm-prompt: "Please fill out the questions on {{url}}. Submit when ready, and a moderator will review your answers."
   
   interview-resend-chat: "We have tried sending your interview link to you again. Type 'verify me' again to retry, or contact a moderator for help."
   
-  interview-accept: "Your interview form has been accepted, welcome to the server! You can now describe your character in <#1155290023613173800>, please ping one of the staff when you've done that."
-  interview-accept-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
+  interview-accept: "Your interview form has been accepted, welcome to the server! You are now verified on Discord and whitelisted on `play.starfallmc.space`. You can now describe your character in <#1155290023613173800>, please ping one of the staff when you've done that."
+  interview-accept-role-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
+  interview-accept-minecraft-error: "Your interview form has been accepted. However, a technical problem prevents the bot from whitelisting you on the Minecraft server. A moderator will do this shortly."
 
   interview-reject: |-
       We're sorry, but your interview form has not been accepted. A moderator has left the following reason:
@@ -25,7 +26,7 @@ data:
 
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
-    What is your Minecraft username? --- 1-0
+    What is your Minecraft username? --- MINECRAFTNAME
     How old are you? --- (.) Under 15 (.) 15 to 18 (.) 18+
     This section is about your experience with Discord! --- (.) Click me to continue
     Do you have any friends in this Discord Server?
