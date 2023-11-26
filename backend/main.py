@@ -50,4 +50,4 @@ app.add_task(periodically_send_list)
 if __name__ == '__main__':
     # db = asyncio.run(create_tables())
     # app.ctx.db = db
-    app.run('0.0.0.0', 80)
+    app.run('0.0.0.0', 80, access_log=True)

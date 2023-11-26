@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import os
 import httpx
@@ -11,6 +12,7 @@ token = os.getenv('DISCORD_TOKEN')
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 client = discord.Client(intents=intents)
 http = httpx.AsyncClient(
@@ -189,6 +191,32 @@ async def on_ready():
     
     process_accepts_rejects.add_exception_type(Exception)
     process_accepts_rejects.start()
+
+
+@client.event
+async def on_raw_member_remove(payload: discord.RawMemberRemoveEvent):
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    while 1:
+        try:
+            r = await http.delete(f"https://interview.starfallmc.space/status/member/{payload.user.id}")
+            r.raise_for_status()
+            return
+        except Exception as e:
+            await modmail_chan.send(f"<@495297618763579402> Cannot send backend notification that <@{payload.user.id}> left: {e}")
+            await asyncio.sleep(60)
+
+@client.event
+async def on_guild_channel_delete(channel: discord.abc.GuildChannel):
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    while 1:
+        try:
+            r = await http.delete(f"https://interview.starfallmc.space/status/channel/{channel.id}")
+            r.raise_for_status()
+            return
+        except Exception as e:
+            await modmail_chan.send(f"<@495297618763579402> Cannot send backend notification that channel {channel} <#{channel.id}> was deleted: {e}")
+            await asyncio.sleep(60)
+
 
 
 if __name__ == '__main__':

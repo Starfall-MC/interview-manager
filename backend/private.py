@@ -154,3 +154,42 @@ async def del_pending_reject(request: Request, id: int) -> HTTPResponse:
     await db.execute("UPDATE interview SET status=? WHERE id=? AND status=?", (InterviewStatus.VERDICT_REJECT_SENT, id, InterviewStatus.VERDICT_REJECT_NOT_SENT))
     await db.commit()
     return resp_json('ok')
+
+
+@bp.delete("/status/channel/<id:int>")
+async def del_by_channel(request: Request, id: int) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+    async with db.execute("SELECT id, user_id, approve_token FROM interview WHERE (status=? OR status=?) AND id=?", (InterviewStatus.WAITING_FOR_VERDICT, InterviewStatus.WAITING_FOR_USER_TO_SUBMIT, id)) as cursor:
+        async for row in cursor:
+            # Reject sent, because if it is not sent then the frontend will try to send it to a missing channel.
+            await db.execute("UPDATE interview SET status=?, verdict=? WHERE id=?", (InterviewStatus.VERDICT_REJECT_SENT, json.dumps({'accept': False, 'reason': '[AUTOMATED] Interview channel disappeared'}), row[0]))
+            content = f"Interview for user <@{row[1]}> is now automatedly rejected because the channel that started it disappeared. You can view the final state of the interview: https://interview.starfallmc.space/{row[0]}/{row[2]}"
+            await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+            await db.commit()
+
+    async with db.execute("SELECT id, user_id, approve_token, status FROM interview WHERE (status=? OR status=? OR status=?) AND id=?", (InterviewStatus.VERDICT_REJECT_NOT_SENT, InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED, InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED, id)) as cursor:
+        async for row in cursor:
+            translation = {
+                InterviewStatus.VERDICT_REJECT_NOT_SENT: InterviewStatus.VERDICT_REJECT_SENT,
+                InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_NOT_APPLIED: InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_NOT_APPLIED,
+                InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED: InterviewStatus.VERDICT_ACCEPT_ROLE_APPLIED_MC_APPLIED,
+            }
+            await db.execute("UPDATE interview SET status=?, verdict=? WHERE id=?", (translation[row[3]], json.dumps({'accept': False, 'reason': '[AUTOMATED] Interview channel disappeared'}), row[0]))
+            content = f"@everyone Interview for user <@{row[1]}> was waiting for Discord status propagation, but the channel for it disappeared. Please apply any changes needed manually. You can view the state of the interview: https://interview.starfallmc.space/{row[0]}/{row[2]}"
+            await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+            await db.commit()
+
+    return resp_json('ok')
+
+@bp.delete("/status/member/<id:int>")
+async def del_by_member(request: Request, id: int) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+    async with db.execute("SELECT id, user_id, approve_token FROM interview WHERE (status=? OR status=?) AND user_id=?", (InterviewStatus.WAITING_FOR_VERDICT, InterviewStatus.WAITING_FOR_USER_TO_SUBMIT, id)) as cursor:
+        async for row in cursor:
+            # Reject not sent, because sending reject does not require user to exist.
+            await db.execute("UPDATE interview SET status=?, verdict=? WHERE id=?", (InterviewStatus.VERDICT_REJECT_NOT_SENT, json.dumps({'accept': False, 'reason': '[AUTOMATED] Discord member disappeared'}), row[0]))
+            content = f"Interview for user <@{row[1]}> is now automatedly rejected because the user that started it disappeared. You can view the final state of the interview: https://interview.starfallmc.space/{row[0]}/{row[2]}"
+            await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+            await db.commit()
+
+    return resp_json('ok')
