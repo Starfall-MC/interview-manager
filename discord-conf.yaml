@@ -5,49 +5,50 @@ metadata:
 data:
   modmail-channel: "1169273912048226445"
   accept-role: "1155274601044115556"
-  verify-activation-phrase: "verify meee"
+  verify-activation-phrase: "verify me"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
-  interview-created-chat-prompt: "Your interview is now ready. Please follow the link sent to your direct messages. If you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help."
+  interview-created-chat-prompt: "Your interview form is now ready. Please follow the link sent to your direct messages. If you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help. If you encounter any issues with the beta version, also feel free to contact us."
   
-  interview-created-dm-error-chat-prompt: "Your interview is now ready, but we could not send you a direct message with the link. Please ensure that your DMs are enabled, then type 'verify me' again; or contact a moderator for help."
+  interview-created-dm-error-chat-prompt: "Your interview form is now ready, but we could not send you a direct message with the link. Please ensure that your DMs are enabled, then type 'verify me' again; or contact a moderator for help."
 
   interview-dm-prompt: "Please fill out the questions on {{url}}. Submit when ready, and a moderator will review your answers."
   
   interview-resend-chat: "We have tried sending your interview link to you again. Type 'verify me' again to retry, or contact a moderator for help."
   
-  interview-accept: "Your interview form has been accepted. You should now have the verified role on the server."
+  interview-accept: "Your interview form has been accepted, welcome to the server! You can now describe your character in <#1155290023613173800>, please ping one of the staff when you've done that."
   interview-accept-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
 
   interview-reject: |-
-      Your interview form has been rejected for the following reason:
+      We're sorry, but your interview form has not been accepted. A moderator has left the following reason:
       > {{reason}}
 
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
     What is your Minecraft username? --- 1-0
     How old are you? --- (.) Under 15 (.) 15 to 18 (.) 18+
+    This section is about your experience with Discord! --- (.) Click me to continue
     Do you have any friends in this Discord Server?
     Why do you want to join our server? --- 20-0
-    How did you hear about our Discord server? --- [.] Friends [.] Discord Server Search [.] Something else
-    If you heard about our Discord server elsewhere, please write this here.
-    Do you have any prior experience with Discord communities or similar servers? --- 2-0
     Have you ever been banned or faced disciplinary action on another Discord server?  Please be honest, we want to learn about you! --- (.) Yes (Does not automatically disqualify you!) (.) No (Does not automatically qualify you!)
     If you have faced disciplinary action, can you please explain the circumstances?
+    This section is about our server rules! --- (.) Click me to continue
     Have you read and do you agree to abide by our server rules and guidelines? --- (.) Yes, I read everything and will abide by the rules. (.) I read the rules but I've got some questions and would like to talk with an admin! (.) I skimmed through and it seems about normal. (.) Not really... (If this is your answer - maybe take a break from this and go catch up!)
     What's the server's main rule that stands out to you the most? --- 10-0
     If you heard someone say a slur in a call but you didn't know who, what would you do? --- 10-0
+    This section is about server interactions! --- (.) Click me to continue
     Do you have any roleplay experiences? (ie; roleplay, ttrpg, etc.) --- 2-0
     Have you ever been in a Lore SMP before? --- 2-0
     Do you prefer to play in groups or by yourself? If you're a solo player, are you willing to play in groups? --- [.] Solo and prefer to not interact with others [.] Solo but working in collaboration with others [.] Group play but we're all doing our own things [.] Group play where we all help each other and sometimes do our own things [.] Completely collaborative group play - family style gaming
-    Members are encouraged to be apart of the community, how often would you be available to play? --- [.] Most months I'd only have a couple days to play and hangout in Minecraft and the server [.] Only a few days a month of time in Minecraft, but I'd be active in the server throughout the month [.] I've got a couple days a week that I'd be on for a few hours in the server and/or in Minecraft [.] I'll likely be on several to many days a week in the server and/or in Minecraft [.] I will live in this server and be in Minecraft all the time [.] You can't get rid of me - *Needs to go touch grass* 😅
-    What's the one thing you hope to contribute to or gain from our community and why? --- 10-0
-    Can you briefly describe your gaming / streaming / interest background? --- 10-0
     What type of player are you? --- [.] The Zookeeper - “Gotta catch em all” [.] Flower Picker - "I'll grab one of these, and one of those, and one of these..." [.] The Hoarder - "Never know when you'll need a..." [.] The Helper - "Do you need some help?" [.] The Farmer - "Got enough food?" [.] The Cook - "Need some food?" [.] The Medic - "PLAYER DOWN" [.] The Warrior - Guardians and Picking Fights with Bosses! [.] The Adventurer - "I know where that is!" [.] The Decorator - Beautifying Everything! [.] The Pro (Speedrunner) - Miles ahead of everyone! [.] The Villager Master - "Let's make a trade!" [.] The Builder - A proper space for everything! [.] The Big Builder - "HOW DID YOU EVEN MAKE THAT?" [.] The Redstoner - Automated Everything! [.] The Achiever - Full Completion!
     Would you like to elaborate on your style of gameplay? 
     Do you have any specific skills or talents that you'd like to contribute to our community? --- 10-0
-    What do you enjoy doing in your free time, apart from our server's theme? --- 10-0
-    Share an interesting fact about yourself that's unrelated to our server's theme. --- 10-0
-    Can you give us an idea of what kind of personality you have? --- [.] Ambitious and Competetive! [.] "Smell the Roses" and "Enjoy the Journey!" [.] Independent and Organized! [.] Shy, Calm, and Caring! [.] Extroverted (Prefers to be around others!) [.] Introverted (Prefers to be alone!) [.] Patient and Ready for hard work! [.] People Pleaser 😅
+    In this section, we would like to know about your in-game character, which is required as we are an RP server -- although it is okay to not have them fully fleshed out yet! We would like you to have a vague idea of them though; if you need help with creating a character, please use the modpack and do some testing alone, we have a ton of accessibility on the server --- (.) Click me to continue
+    Name and origin? (not being concrete on names is okay) --- 2-0
+    Character motives? (what is their basic concept? are they trying to achieve something?) --- 10-0
+    Personality and Backstory (please write at least a paragraph -- the longer the better!) --- 100-0
+    Their D&D alignment on the horizontal axis? (see https://easydamus.com/alignmenttest.html for info) --- (.) Lawful (.) Neutral (.) Chaotic
+    Their D&D alignment on the vertical axis? (see https://easydamus.com/alignmenttest.html for info) --- (.) Good (.) Neutral (.) Evil
     Are you a content creator or streamer? If so, share a link to your channel/profile.
     Is there anything we didn't ask but you'd like to share? --- 5-0
+    We appreciate your time answering so we can get to know you! --- (.) Click me to continue
