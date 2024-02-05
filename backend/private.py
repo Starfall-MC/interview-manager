@@ -139,6 +139,23 @@ async def del_pending_accept(request: Request, id: int) -> HTTPResponse:
     await db.commit()
     return resp_json('ok')
 
+@bp.get("/pending/notify")
+async def pending_notifies(request: Request) -> HTTPResponse:
+    entries = []
+    db: aiosqlite.Connection = request.app.ctx.db
+    async with db.execute("SELECT id, user_id FROM completion_notification WHERE is_sent=0",) as cursor:
+        async for row in cursor:
+            entries.append({'channel_id': row[0], 'user_id': row[1]})
+    return resp_json(entries)
+
+@bp.delete("/pending/notify/<id:int>")
+async def del_pending_notify(request: Request, id: int) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+    await db.execute("DELETE FROM completion_notification WHERE id=?", (id,))
+    await db.commit()
+    return resp_json('ok')
+
+
 @bp.get("/pending/reject")
 async def pending_rejects(request: Request) -> HTTPResponse:
     entries = []
@@ -159,6 +176,11 @@ async def del_pending_reject(request: Request, id: int) -> HTTPResponse:
 @bp.delete("/status/channel/<id:int>")
 async def del_by_channel(request: Request, id: int) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db
+
+    # "Send" all notifications corresponding to this channel
+    await db.execute("UPDATE completion_notification SET is_sent=1 WHERE id=?", (id,))
+
+
     async with db.execute("SELECT id, user_id, approve_token FROM interview WHERE (status=? OR status=?) AND id=?", (InterviewStatus.WAITING_FOR_VERDICT, InterviewStatus.WAITING_FOR_USER_TO_SUBMIT, id)) as cursor:
         async for row in cursor:
             # Reject sent, because if it is not sent then the frontend will try to send it to a missing channel.
@@ -179,17 +201,24 @@ async def del_by_channel(request: Request, id: int) -> HTTPResponse:
             await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
             await db.commit()
 
+    await db.commit()
+
     return resp_json('ok')
 
 @bp.delete("/status/member/<id:int>")
 async def del_by_member(request: Request, id: int) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db
+
+    # "Send" all notifications corresponding to this member
+    await db.execute("UPDATE completion_notification SET is_sent=1 WHERE user_id=?", (id,))
+
     async with db.execute("SELECT id, user_id, approve_token FROM interview WHERE (status=? OR status=?) AND user_id=?", (InterviewStatus.WAITING_FOR_VERDICT, InterviewStatus.WAITING_FOR_USER_TO_SUBMIT, id)) as cursor:
         async for row in cursor:
-            # Reject not sent, because sending reject does not require user to exist.
+            # Reject is set to not sent, because sending reject does not require user to exist.
             await db.execute("UPDATE interview SET status=?, verdict=? WHERE id=?", (InterviewStatus.VERDICT_REJECT_NOT_SENT, json.dumps({'accept': False, 'reason': '[AUTOMATED] Discord member disappeared'}), row[0]))
             content = f"Interview for user <@{row[1]}> is now automatedly rejected because the user that started it disappeared. You can view the final state of the interview: https://interview.starfallmc.space/{row[0]}/{row[2]}"
             await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
             await db.commit()
 
+    await db.commit()
     return resp_json('ok')

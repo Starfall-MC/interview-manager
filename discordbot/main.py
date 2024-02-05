@@ -78,7 +78,7 @@ async def process_modmail():
             del_resp = await http.delete(f"https://interview.starfallmc.space/modmail/{entry['id']}")
             del_resp.raise_for_status()
     except Exception as e:
-        await modmail_chan.send(f"ERROR while fetching modmail: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
+        await modmail_chan.send(f"ERROR while processing modmail: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
         traceback.print_exc()
         raise e
 
@@ -169,7 +169,7 @@ async def process_accepts_rejects():
             del_resp.raise_for_status()
 
     except Exception as e:
-        await modmail_chan.send(f"ERROR while fetching accepts/rejects: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
+        await modmail_chan.send(f"ERROR while processing accepts/rejects: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
         traceback.print_exc()
         raise e
 
@@ -177,20 +177,61 @@ async def process_accepts_rejects():
 async def before_accepts_rejects():
     print('waiting for bot to be ready before accepts_rejects...')
     await client.wait_until_ready()
-    print("Ready, now working on modmail!")
+    print("Ready, now working on accepts_rejects!")
+
+
+@tasks.loop(seconds=17)
+async def process_notifies():
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    try:
+        r = await http.get('https://interview.starfallmc.space/pending/notify')
+        r.raise_for_status()
+        r = r.json()
+        for entry in r:
+            interview_chan = client.get_channel(entry['channel_id'])
+            if interview_chan is None:
+                await modmail_chan.send(f"<@495297618763579402> Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to accept user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
+                continue
+            embed = discord.Embed(color=discord.Color.dark_green(), title='Interview received', description=get_prop('interview-submit'))
+            try:
+                await interview_chan.send(content=f'<@{entry["user_id"]}>', embed=embed, allowed_mentions=discord.AllowedMentions.all())
+            except Exception as e:
+                await modmail_chan.send(f"<@495297618763579402> Tried to send interview-recv notification to channel ID={entry['channel_id']} <#{entry['channel_id']}> but couldn't: {e}", allowed_mentions=discord.AllowedMentions.all())
+                continue
+
+            del_resp = await http.delete(f"https://interview.starfallmc.space/pending/notify/{entry['channel_id']}")
+            del_resp.raise_for_status()
+
+    except Exception as e:
+        await modmail_chan.send(f"ERROR while processing completion notifications: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
+        traceback.print_exc()
+        raise e
+
+            
+
+
+@process_notifies.before_loop
+async def before_accepts_rejects():
+    print('waiting for bot to be ready before notifies...')
+    await client.wait_until_ready()
+    print("Ready, now working on notifies!")
 
 
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 9")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 10")
 
     process_modmail.add_exception_type(Exception)
     process_modmail.start()
     
     process_accepts_rejects.add_exception_type(Exception)
     process_accepts_rejects.start()
+
+    process_notifies.add_exception_type(Exception)
+    process_notifies.start()
+
 
 
 @client.event

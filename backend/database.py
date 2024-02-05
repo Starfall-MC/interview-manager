@@ -19,6 +19,13 @@ async def create_tables():
                      id INTEGER NOT NULL PRIMARY KEY,
                      content TEXT NOT NULL
     )""")
+    
+    await db.execute("""CREATE TABLE IF NOT EXISTS completion_notification (
+                     id INTEGER NOT NULL PRIMARY KEY,
+                     user_id INTEGER NOT NULL,
+                     is_sent INTEGER NOT NULL DEFAULT 0
+    )""")
+
     return db
 
 class InterviewStatus:

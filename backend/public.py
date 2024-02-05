@@ -149,6 +149,8 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
             new_status = InterviewStatus.WAITING_FOR_VERDICT
             content = f"@everyone The user <@{user_id}> has sent in their responses. Please set the verdict now: https://interview.starfallmc.space/{interview_id}/{approve_token}"
             await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+            await db.execute('INSERT INTO completion_notification (id, user_id) VALUES (?,?)', (interview_id, user_id))
+            await db.commit()
         else:
             new_status = InterviewStatus.WAITING_FOR_USER_TO_SUBMIT
 
@@ -179,7 +181,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
             for q in questions:
                 if mc_username: break
                 if q['kind'] == 'text':
-                    for c in q.get('constraints', []):
+                    for c in q.get('constraints') or []:
                         if mc_username: break
                         if c['kind'] == 'minecraftname':
                             # Found the question, now get the answer
