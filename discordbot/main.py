@@ -217,11 +217,55 @@ async def before_accepts_rejects():
     print("Ready, now working on notifies!")
 
 
+@tasks.loop(hours=1)
+async def sync_banned_role():
+    # Loop over all the channels in the guild and check if the banned role has write access;
+    # if yes, edit it to no.
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    guild = modmail_chan.guild
+    ban_role_id = int(get_prop('banned-role'))
+
+    try:
+        ban_role = guild.get_role(ban_role_id)
+        change_count = 0
+        for chan in guild.channels:
+            overwrites = chan.overwrites_for(ban_role)
+            perms = chan.permissions_for(ban_role)
+            changed = False
+            if perms.send_messages:
+                overwrites.send_messages = False
+                changed = True
+            if perms.send_messages_in_threads:
+                overwrites.send_messages_in_threads = False
+                changed = True
+            if changed:
+                await chan.set_permissions(ban_role, overwrite=overwrites, reason="syncing ban role permissions")
+                if change_count == 0:
+                    await modmail_chan.send("Detected channel with wrong banned role permissions, syncing...")
+                change_count += 1
+        
+        if change_count:
+            await modmail_chan.send(f"Permission sync completed, {change_count} channels changed")
+
+    except Exception as e:
+        await modmail_chan.send(f"ERROR while syncing ban role <@&{ban_role_id}>: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions(users=True))
+        traceback.print_exc()
+        raise e
+        
+
+
+@process_notifies.before_loop
+async def before_sync_ban():
+    print('waiting for bot to be ready before sync ban role...')
+    await client.wait_until_ready()
+    print("Ready, now working on sync ban role!")
+
+
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 10")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 12")
 
     process_modmail.add_exception_type(Exception)
     process_modmail.start()
@@ -231,6 +275,10 @@ async def on_ready():
 
     process_notifies.add_exception_type(Exception)
     process_notifies.start()
+    
+    sync_banned_role.add_exception_type(Exception)
+    sync_banned_role.start()
+
 
 
 

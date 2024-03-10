@@ -5,6 +5,7 @@ metadata:
 data:
   modmail-channel: "1169273912048226445"
   accept-role: "1155274601044115556"
+  banned-role: "1216220412027994222"
   verify-activation-phrase: "verify me"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
@@ -18,7 +19,7 @@ data:
   
   interview-submit: "Thank you for filling out the interview form! Our team will review it shortly. You'll receive a notification when it happens."
 
-  interview-accept: "Your interview form has been accepted, **welcome to the server**! You are now verified on Discord and whitelisted on `play.starfallmc.space`. For your next steps, you should tell everyone about your character in <#1155290023613173800>, make sure you remember the Minecraft rules in <#1155289068272361482> and the lore rules in <#1155289960056897566>, install the server's modpack in <#1160108585620094987>, and enjoy your time with us!"
+  interview-accept: "Your interview form has been accepted, **welcome to the server**! You are now verified on Discord and whitelisted on `play.starfallmc.space`. For your next steps, you should tell everyone about your character in <#1202720650523844728>, make sure you remember the Minecraft rules in <#1155289068272361482> and the lore rules in <#1155289960056897566>, install the server's modpack in <#1160108585620094987>, and enjoy your time with us!"
   interview-accept-role-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
   interview-accept-minecraft-error: "Your interview form has been accepted. However, a technical problem prevents the bot from whitelisting you on the Minecraft server. A moderator will do this shortly."
 

@@ -28,18 +28,21 @@ delete:
 	kubectl delete -f deploy-svc.yaml -f deploy-backend.yaml -f deploy-discord.yaml -f secrets.yaml -f discord-conf.yaml
 
 redeploy:
-	kubectl delete -f deploy-backend.yaml -f deploy-discord.yaml; exit 0
 	make build
+	kubectl delete -f deploy-backend.yaml -f deploy-discord.yaml; exit 0
+	sleep 5
 	kubectl apply  -f deploy-backend.yaml -f deploy-discord.yaml
 
 redeploy-discord:
-	kubectl delete -f deploy-discord.yaml; exit 0
 	make build-discord
+	kubectl delete -f deploy-discord.yaml; exit 0
+	sleep 5
 	kubectl apply -f deploy-discord.yaml
 
 redeploy-backend:
-	kubectl delete -f deploy-backend.yaml; exit 0
 	make build-backend
+	kubectl delete -f deploy-backend.yaml; exit 0
+	sleep 5
 	kubectl apply -f deploy-backend.yaml
 
 initialize_ns:
@@ -51,3 +54,7 @@ initialize_builder:
 
 delete_builder:
 	docker buildx rm kube
+
+
+log-discord:
+	kubectl logs -f deployments/interview-manager-discord
