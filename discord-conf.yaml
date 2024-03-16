@@ -9,44 +9,44 @@ data:
   verify-activation-phrase: "verify me"
   verify-activation-channel-regex: "^ticket-\\d+$"
   
-  interview-created-chat-prompt: "Thank you for your interest in joining our server! Your interview form is now ready. Please follow the link sent to your direct messages. If you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help. If you encounter any issues with the beta version, also feel free to contact us."
+  interview-created-chat-prompt: "Thank you for your interest in joining our server! Your interview form is now ready. Please follow the link sent to your direct messages.\n\nIf you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help.\n\nIf you encounter any issues with this bot, also feel free to contact us."
   
   interview-created-dm-error-chat-prompt: "Thank you for your interest in joining our server!  Your interview form is now ready, but **we could not send you a direct message** with the link. Please ensure that your DMs are enabled, then type 'verify me' again; or contact a moderator for help."
 
-  interview-dm-prompt: "Please fill out the questions on {{url}}. Submit when ready, and a moderator will review your answers."
+  interview-dm-prompt: "Your interview form is available on {{url}}. After filling out and submitting the questions, a moderator will review the responses.\n\nAny status updates will be sent to the ticket on the server. You can also contact a moderator there with any questions."
   
   interview-resend-chat: "We have tried sending your interview link to you again. Type 'verify me' again to retry, or contact a moderator for help."
   
-  interview-submit: "Thank you for filling out the interview form! Our team will review it shortly. You'll receive a notification when it happens."
+  interview-submit: "Thank you for filling out the interview form! Our team will review it shortly. We'll send a notification here when it happens."
 
-  interview-accept: "Your interview form has been accepted, **welcome to the server**! You are now verified on Discord and whitelisted on `play.starfallmc.space`. For your next steps, you should tell everyone about your character in <#1202720650523844728>, make sure you remember the Minecraft rules in <#1155289068272361482> and the lore rules in <#1155289960056897566>, install the server's modpack in <#1160108585620094987>, and enjoy your time with us!"
+  interview-accept: "Your interview form has been accepted, **welcome to the server**! You are now verified on Discord and whitelisted on `play.starfallmc.space`.\n\nFor your next steps, you should tell everyone about your character in <#1202720650523844728>, make sure you remember the Minecraft rules in <#1155289068272361482> and the lore rules in <#1155289960056897566>, install the server's modpack in <#1160108585620094987>, and enjoy your time with us!"
   interview-accept-role-error: "Your interview form has been accepted. However, a technical problem prevents the bot from automatically granting you permissions on the server. A moderator will do this shortly."
   interview-accept-minecraft-error: "Your interview form has been accepted. However, a technical problem prevents the bot from whitelisting you on the Minecraft server. A moderator will do this shortly."
 
   interview-reject: |-
-      We're sorry, but your interview form has not been accepted. A moderator has left the following reason:
+      Unfortunately, your interview form has not been accepted. A moderator has left the following reason:
       > {{reason}}
 
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
     What is your Minecraft username? --- MINECRAFTNAME
     How old are you? --- (.) Under 15 (.) 15 to 18 (.) 18+
-    This section is about your experience with Discord! --- (.) Click me to continue
+    This section is about your experience with Discord! --- SECTION
     Do you have any friends in this Discord Server?
     Why do you want to join our server? --- 20-0
     Have you ever been banned or faced disciplinary action on another Discord server?  Please be honest, we want to learn about you! --- (.) Yes (Does not automatically disqualify you!) (.) No (Does not automatically qualify you!)
     If you have faced disciplinary action, can you please explain the circumstances?
-    This section is about our server rules! --- (.) Click me to continue
+    This section is about our server rules! --- SECTION
     Have you read and do you agree to abide by our server rules and guidelines? --- (.) Yes, I read everything and will abide by the rules. (.) I read the rules but I've got some questions and would like to talk with an admin! (.) I skimmed through and it seems about normal. (.) Not really... (If this is your answer - maybe take a break from this and go catch up!)
     What's the server's main rule that stands out to you the most? --- 10-0
     If you heard someone say a slur in a call but you didn't know who, what would you do? --- 10-0
-    This section is about server interactions! --- (.) Click me to continue
+    This section is about server interactions! --- SECTION
     Do you have any roleplay experiences? (ie; roleplay, ttrpg, etc.) --- 2-0
     Have you ever been in a Lore SMP before? --- 2-0
     Do you prefer to play in groups or by yourself? If you're a solo player, are you willing to play in groups? --- 5-0
     Would you like to elaborate on your style of gameplay? 
     Do you have any specific skills or talents that you'd like to contribute to our community? --- 10-0
-    In this section, we would like to know about your in-game character, which is required as we are an RP server -- although it is okay to not have them fully fleshed out yet! We would like you to have a vague idea of them though; if you need help with creating a character, please use the modpack and do some testing alone, we have a ton of accessibility on the server --- (.) Click me to continue
+    In this section, we would like to know about your in-game character, which is required as we are an RP server -- although it is okay to not have them fully fleshed out yet! We would like you to have a vague idea of them though; if you need help with creating a character, please use the modpack and do some testing alone, we have a ton of accessibility on the server --- SECTION
     Name and origin? (not being concrete on names is okay) --- 2-0
     Character motives? (what is their basic concept? are they trying to achieve something?) --- 10-0
     Personality and Backstory (please write at least a paragraph -- the longer the better!) --- 100-0
@@ -54,4 +54,4 @@ data:
     Their D&D alignment on the vertical axis? (see https://easydamus.com/alignmenttest.html for info) --- (.) Good (.) Neutral (.) Evil
     Are you a content creator or streamer? If so, share a link to your channel/profile.
     Is there anything we didn't ask but you'd like to share? --- 5-0
-    We appreciate your time answering so we can get to know you! --- (.) Click me to continue
+    We appreciate your time answering so we can get to know you! --- SECTION

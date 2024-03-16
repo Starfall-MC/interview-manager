@@ -119,6 +119,10 @@ def get_questions():
                 q['kind'] = 'text'
                 q['constraints'] = [{'kind': 'minecraftname'}]
                 questions.append(q)
+            elif 'SECTION' in desc:
+                q['kind'] = 'section'
+                questions.append(q)
+
 
     return questions
 

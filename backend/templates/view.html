@@ -6,7 +6,12 @@
     {% for question in questions %}
     <div class="card mb-3">
         <div class="card-body">
-            <p>{{question['body']}}</p>
+            {% if question['kind'] == 'section' %}
+                <h3>{{question['body']}}</h3>
+                <hr />
+            {% else %}
+                <p>{{question['body']}}</p>
+            {% endif %}
             {% if question['kind'] == 'radio'%}
                 {% for option in question['options'] %}
                 <div class="form-check mb-2">
@@ -21,6 +26,8 @@
                     <label class="form-check-label" for="radio-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
                 </div>
                 {% endfor %}
+            {% elif question['kind'] == 'section' %}
+                <!-- no question options here -->
             {% else %}
             <textarea disabled readonly class="form-control" id="question-{{question['id']}}" name="question-{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
             {% endif %}

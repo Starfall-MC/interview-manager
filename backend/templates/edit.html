@@ -26,7 +26,12 @@
     {% for question in questions %}
     <div class="card mb-3">
         <div class="card-body">
-            <p>{{question['body']}}</p>
+            {% if question['kind'] == 'section' %}
+                <h3>{{question['body']}}</h3>
+                <hr />
+            {% else %}
+                <p>{{question['body']}}</p>
+            {% endif %}
             
             {% if question['kind'] == 'radio'%}
                 {% for option in question['options'] %}
@@ -42,6 +47,8 @@
                     <label class="form-check-label" for="check-{{question['id']}}-{{option['id']}}">{{option['name']}}</label>
                 </div>
                 {% endfor %}
+            {% elif question['kind'] == 'section' %}
+                <!-- no question options here -->
             {% else %}
             <textarea class="question-text-field form-control {{'is-invalid' if validity.get(question['id']) else ''}}" id="question-{{question['id']}}" name="question-{{question['id']}}" data-question-id="{{question['id']}}" rows="3">{{answers[question['id']]}}</textarea>
             {% endif %}
