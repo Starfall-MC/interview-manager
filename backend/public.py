@@ -190,8 +190,8 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
             if mc_username:
                 def whitelist_in_minecraft():
                     with mcrcon.MCRcon(get_secret_prop('rcon_host'), get_secret_prop('rcon_password'), port=int(get_secret_prop('rcon_port'))) as mcr:
-                        resp = mcr.command(f"/whitelist add {mc_username}").strip()
-                        if resp not in [f'Added {mc_username} to the whitelist', 'Player is already whitelisted']:
+                        resp = mcr.command(f"/whitelist add {mc_username}").strip().lower()
+                        if resp not in [f'Added {mc_username} to the whitelist'.lower(), 'Player is already whitelisted'.lower()]:
                             raise ValueError(f"Unexpected response to whitelist command: {repr(resp)}")
                         mcr.command(f"/say A moderator has just accepted an interview: {mc_username} is now whitelisted")
 
