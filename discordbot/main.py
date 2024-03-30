@@ -1,11 +1,13 @@
 import asyncio
 import discord
 import os
-import httpx
 import re
 import traceback
 from discord.ext import tasks
 
+import common
+from common import *
+import commands
 
 token = os.getenv('DISCORD_TOKEN')
 
@@ -15,14 +17,11 @@ intents.message_content = True
 intents.members = True
 
 client = discord.Client(intents=intents)
-http = httpx.AsyncClient(
-    auth=httpx.BasicAuth("discord-bot", token)
-)
+common.client = client  # Must be done before commands.attach!
 
 app_commands = discord.app_commands.CommandTree(client)
 
-def get_prop(name):
-    return open(f'/config/{name}').read().strip()
+commands.attach(app_commands)
 
 
 
@@ -322,51 +321,6 @@ async def on_guild_channel_delete(channel: discord.abc.GuildChannel):
 
 
 
-@app_commands.context_menu(name="Update Minecraft username")
-@discord.app_commands.default_permissions(ban_members=True)
-@discord.app_commands.guild_only()
-async def update_mc_username(interaction: discord.Interaction, user: discord.Member):
-    await interaction.response.send_message("To be implemented...", ephemeral=True)
-
-@app_commands.context_menu(name="View user's interview")
-@discord.app_commands.default_permissions(ban_members=True)
-@discord.app_commands.guild_only()
-async def get_interview_ctx_command(interaction: discord.Interaction, user: discord.User):
-    await interaction.response.defer(thinking=True, ephemeral=True)
-    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    try:
-        resp = await http.get(f"https://interview.starfallmc.space/interviews/by-user/{user.id}")
-        resp.raise_for_status()
-        data = resp.json()
-        if len(data) == 0:
-            await interaction.followup.send(f"There are no interviews associated with <@{user.id}>.")
-        elif len(data) == 1:
-            await interaction.followup.send(f"<@{user.id}>'s interview can be viewed at: {data[0]['url']}")
-        else:
-            interview_list_str = '\n'.join(map(lambda x: f'- {x["url"]}', data))
-            await interaction.followup.send(f"<@{user.id}> has {len(data)} interviews:\n" + interview_list_str)
-    except Exception as e:
-        await modmail_chan.send(f"<@495297618763579402> Error in `get_interview_ctx_command()` HTTP interaction: {e}", allowed_mentions=discord.AllowedMentions.all())
-        await interaction.followup.send("There was an error with the command. The bot owner was notified.")
-
-@app_commands.context_menu(name="Get Minecraft username")
-@discord.app_commands.guild_only()
-async def get_mc_name_ctx_command(interaction: discord.Interaction, user: discord.User):
-    await interaction.response.defer(thinking=True, ephemeral=True)
-    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    try:
-        resp = await http.get(f"https://interview.starfallmc.space/minecraft/discord-to-name/{user.id}")
-        resp.raise_for_status()
-        data = resp.json()
-        if data['status'] == 'ok':
-            await interaction.followup.send(f"<@{user.id}> has Minecraft username: {data['name']}")
-        elif data['status'] == 'missing':
-            await interaction.followup.send(f"We don't know <@{user.id}>'s Minecraft username yet.")
-        else:
-            await modmail_chan.send(f"<@495297618763579402> In `get_mc_name_ctx_command()` got unexpected data: `{data}`", allowed_mentions=discord.AllowedMentions.all())
-    except Exception as e:
-        await modmail_chan.send(f"<@495297618763579402> Error in `get_mc_name_ctx_command()` HTTP interaction: {e}", allowed_mentions=discord.AllowedMentions.all())
-        await interaction.followup.send("There was an error with the command. The bot owner was notified.")
 
 
 if __name__ == '__main__':
