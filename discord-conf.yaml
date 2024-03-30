@@ -7,7 +7,7 @@ data:
   accept-role: "1155274601044115556"
   banned-role: "1216220412027994222"
   verify-activation-phrase: "verify me"
-  verify-activation-channel-regex: "^ticket-\\d+$"
+  verify-activation-channel-regex: "^(\\w+-)+\\d+$"
   
   interview-created-chat-prompt: "Thank you for your interest in joining our server! Your interview form is now ready. Please follow the link sent to your direct messages.\n\nIf you didn't receive a link, your DMs could be disabled: please enable them temporarily, then type 'verify me' again; or contact a moderator for help.\n\nIf you encounter any issues with this bot, also feel free to contact us."
   

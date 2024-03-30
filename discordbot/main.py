@@ -45,7 +45,7 @@ async def on_message(message: discord.Message):
     async with message.channel.typing():
         r = await http.post("https://interview.starfallmc.space/new", json=j)
     if r.status_code != 200:
-        await message.reply(f'There was an internal error while setting up your interview: POST /new returned code {r.status_code} and text: `{r.text[:1000]}`\n<@495297618763579402> needs to fix this.\nPlease contact a moderator to proceed with your interview.')
+        await message.reply(f'There was an internal error while setting up your interview: POST /new returned code {r.status_code} and text: `{r.text[:1000]}`\n\n<@495297618763579402> needs to fix this.\n\nPlease try again, or contact a moderator to proceed with your interview.')
         return
     
     resp = r.json()
@@ -58,6 +58,10 @@ async def on_message(message: discord.Message):
             await message.reply(get_prop('interview-created-dm-error-chat-prompt'))
         else:
             await message.reply(get_prop('interview-created-chat-prompt'))
+        finally:
+            interview_chan = message.channel
+            number_part = interview_chan.name.split('-')[-1]
+            await interview_chan.edit(name=f'user-is-filling-{number_part}', reason='Interview manager channel status')
     else:
         try:
             await message.author.send(get_prop('interview-dm-prompt').replace('{{url}}', resp['edit_url']))
@@ -104,6 +108,8 @@ async def process_accepts_rejects():
             if interview_chan is None:
                 await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to accept user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
 
+            number_part = interview_chan.name.split('-')[-1]
+            await interview_chan.edit(name=f'accepted-{number_part}', reason='Interview manager channel status')
 
             # First, find the member and try to apply the accept role to them.
             # If there is no member, send a mod mail, but also delete the pending record.
@@ -160,6 +166,9 @@ async def process_accepts_rejects():
             if interview_chan is None:
                 await modmail_chan.send(f"@everyone Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to reject user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
             
+            number_part = interview_chan.name.split('-')[-1]
+            await interview_chan.edit(name=f'rejected-{number_part}', reason='Interview manager channel status')
+
             await interview_chan.send(
                 content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
                 embed=discord.Embed(color=discord.Color.red(), title="Interview rejected", description=get_prop("interview-reject").replace('{{reason}}', entry['reason']))
@@ -192,6 +201,9 @@ async def process_notifies():
             if interview_chan is None:
                 await modmail_chan.send(f"<@495297618763579402> Tried to get channel ID={entry['channel_id']} <#{entry['channel_id']}> in order to accept user ID={entry['user_id']} <@{entry['user_id']}>, but could not find this channel! Please fix this manually!", allowed_mentions=discord.AllowedMentions.all())
                 continue
+            
+            number_part = interview_chan.name.split('-')[-1]
+            await interview_chan.edit(name=f'waiting-for-mod-{number_part}', reason='Interview manager channel status')
             embed = discord.Embed(color=discord.Color.dark_green(), title='Interview received', description=get_prop('interview-submit'))
             try:
                 await interview_chan.send(content=f'<@{entry["user_id"]}>', embed=embed, allowed_mentions=discord.AllowedMentions.all())
@@ -206,8 +218,6 @@ async def process_notifies():
         await modmail_chan.send(f"ERROR while processing completion notifications: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions.all())
         traceback.print_exc()
         raise e
-
-            
 
 
 @process_notifies.before_loop
@@ -265,7 +275,7 @@ async def before_sync_ban():
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 12")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.1")
 
     process_modmail.add_exception_type(Exception)
     process_modmail.start()
