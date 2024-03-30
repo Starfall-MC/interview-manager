@@ -43,7 +43,7 @@ async def periodically_send_list(app):
             traceback.print_exc()
             await asyncio.sleep(5)
             continue
-        await asyncio.sleep(12 * 60 * 60)
+        await asyncio.sleep(6 * 60 * 60)
 
 app.add_task(periodically_send_list)
 

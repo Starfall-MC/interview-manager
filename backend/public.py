@@ -197,6 +197,12 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
 
                 loop = asyncio.get_event_loop()
                 try:
+                    try:
+                        await db.execute("INSERT INTO minecraft_usernames (discord_id, mc_name) VALUES (?,?)", (user_id, mc_username))
+                    except aiosqlite.IntegrityError:
+                        await db.execute("UPDATE minecraft_usernames SET mc_name=? WHERE discord_id=?", (mc_username, user_id))
+                    await db.execute("INSERT INTO minecraft_whitelist_target VALUES (?)", (mc_username,))
+                    await db.commit()
                     whitelist_in_minecraft() # Cannot run this in executor because it uses signal, which can only be used in main thread
                     new_status = InterviewStatus.VERDICT_ACCEPT_ROLE_NOT_APPLIED_MC_APPLIED
                     status_word = 'ACCEPTED and Minecraft whitelist OK'

@@ -26,6 +26,16 @@ async def create_tables():
                      is_sent INTEGER NOT NULL DEFAULT 0
     )""")
 
+    await db.execute("""CREATE TABLE IF NOT EXISTS minecraft_usernames (
+                     discord_id INTEGER NOT NULL PRIMARY KEY,
+                     mc_name TEXT NOT NULL UNIQUE COLLATE NOCASE
+    )""")
+
+    await db.execute("""CREATE TABLE IF NOT EXISTS minecraft_whitelist_target (
+                     mc_name TEXT NOT NULL PRIMARY KEY COLLATE NOCASE
+    )""")
+
+
     return db
 
 class InterviewStatus:
