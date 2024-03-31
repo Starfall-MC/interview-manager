@@ -8,10 +8,15 @@ import random
 import string
 import json
 import time
+import mcrcon
 
 from database import InterviewStatus
 
 token = os.getenv('DISCORD_TOKEN')
+
+def get_secret_prop(name):
+    return open(f'/secrets/{name}').read().strip()
+
 
 bp = Blueprint('private')
 
@@ -290,3 +295,97 @@ async def minecraft_alter_name(request: Request, id: int) -> HTTPResponse:
         
         await db.commit()
         return resp_json({'status': 'ok', 'old_name': old_name, 'new_name': new_name, 'did_update_whitelist': existing_whitelist})
+
+async def apply_spelling(db: aiosqlite.Connection, correct_spelling: str):
+    db.execute("UPDATE minecraft_whitelist_target SET mc_name=? WHERE mc_name=? COLLATE NOCASE", (correct_spelling, correct_spelling))
+    db.execute("UPDATE minecraft_usernames SET mc_name=? WHERE mc_name=? COLLATE NOCASE", (correct_spelling, correct_spelling))
+
+@bp.post("/minecraft/ideal-whitelist/reify")
+async def reify_mc_whitelist(request: Request) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    # Get the current active whitelist and the ideal whitelist
+
+    ideal = []
+    async with db.execute("SELECT mc_name FROM minecraft_whitelist_target") as cursor:
+        async for row in cursor:
+            ideal.append(row[0])
+
+    ideal_cmp = set(map(lambda x: x.lower(), ideal))
+
+
+    with mcrcon.MCRcon(get_secret_prop('rcon_host'), get_secret_prop('rcon_password'), port=int(get_secret_prop('rcon_port'))) as mcr:
+        resp = mcr.command("/whitelist list").strip().lower()
+
+    # There are 123 whitelisted player(s): a, b, c
+    
+    resp = resp.split('player(s):')[1]
+    actual = list(map(lambda x: x.strip(), resp.split(',')))
+    actual_cmp = set(map(lambda x: x.lower(), actual))
+
+    to_apply = []
+
+    for item in ideal:
+        if item.lower() not in actual_cmp:
+            to_apply.append((item, '+'))
+    
+    for item in actual:
+        if item.lower() not in ideal_cmp:
+            to_apply.append((item, '-'))
+        
+        await apply_spelling(db, item)
+    
+    await db.commit()
+
+    with mcrcon.MCRcon(get_secret_prop('rcon_host'), get_secret_prop('rcon_password'), port=int(get_secret_prop('rcon_port'))) as mcr:
+        for name, action in to_apply:
+            if action == '+':
+                resp = mcr.command(f'whitelist add {name}')
+                if resp.lower().strip() not in [f'added {name.lower()} to the whitelist', 'player is already whitelisted']:
+                    content = f'<@495297618763579402> Error while reifying whitelist: `+ {name}` returned `{resp}`'
+                    await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+                    await db.commit()
+            else:
+                resp = mcr.command(f'whitelist remove {name}')
+                if resp.lower().strip() not in [f'removed {name.lower()} from the whitelist', 'player is not whitelisted']:
+                    content = f'<@495297618763579402> Error while reifying whitelist: `- {name}` returned `{resp}`'
+                    await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+                    await db.commit()
+
+    if to_apply:
+        reify_actions = ', '.join(map(lambda x: f'`{x[1]} {x[0]}`', to_apply))
+        content = f"Whitelist reification caused these commands: {reify_actions}"
+        await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+        await db.commit()
+
+
+
+    return resp_json(to_apply)
+
+
+@bp.put("/minecraft/ideal-whitelist/<name:str>")
+async def add_to_ideal(request: Request, name: str) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    try:
+        await db.execute("INSERT INTO minecraft_whitelist_target VALUES (?)", (name,))
+    except aiosqlite.IntegrityError:
+        return resp_json({'status': 'already'})
+
+    return resp_json({'status': 'ok'})
+
+@bp.delete("/minecraft/ideal-whitelist/<name:str>")
+async def del_from_ideal(request: Request, name: str) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    # Check if it's already there
+    is_there = False
+    async with db.execute("SELECT 1 FROM minecraft_whitelist_target WHERE mc_name=?", (name,)) as cursor:
+        async for _row in cursor:
+            is_there = True
+
+    if not is_there:
+        return resp_json({'status': 'already'})
+
+    await db.execute("DELETE FROM minecraft_whitelist_target WHERE mc_name=?", (name,))
+    return resp_json({'status': 'ok'})

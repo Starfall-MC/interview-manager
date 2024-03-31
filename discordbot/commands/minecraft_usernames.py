@@ -2,7 +2,6 @@ import traceback
 import uuid
 import discord
 from discord import app_commands
-from discord.utils import MISSING
 from common import http, get_prop
 import common
 

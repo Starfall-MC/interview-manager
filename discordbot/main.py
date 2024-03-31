@@ -276,7 +276,7 @@ async def before_sync_ban():
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.2")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.4")
 
     await app_commands.sync()
 
