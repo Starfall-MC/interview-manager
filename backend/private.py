@@ -267,18 +267,18 @@ async def minecraft_alter_name(request: Request, id: int) -> HTTPResponse:
             old_name = row[0]
     
     if old_name is None:
-        db.execute("INSERT INTO minecraft_usernames (discord_id, mc_name) VALUES (?,?)", (id, new_name))
-        db.commit()
+        await db.execute("INSERT INTO minecraft_usernames (discord_id, mc_name) VALUES (?,?)", (id, new_name))
+        await db.commit()
         return resp_json({'status': 'ok', 'old_name': None, 'new_name': new_name, 'did_update_whitelist': False})
     else:
         try:
-            await db.execute("UPDATE minecraft_usernames SET mc_name=? WHERE discord_id=?", (id, new_name))
+            await db.execute("UPDATE minecraft_usernames SET mc_name=? WHERE discord_id=?", (new_name, id))
         except aiosqlite.IntegrityError:
             return resp_json({'status': 'err', 'reason': 'name_collision_in_usernames'})
 
         # Check if the whitelist target list needs updating.
         existing_whitelist = False
-        async with db.execute("SELECT 1 FROM minecraft_whitelist_target WHERE mc_name=?", (old_name)) as cursor:
+        async with db.execute("SELECT 1 FROM minecraft_whitelist_target WHERE mc_name=?", (old_name,)) as cursor:
             async for _row in cursor:
                 existing_whitelist = True
         

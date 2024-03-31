@@ -1,3 +1,4 @@
+import traceback
 import discord
 from discord import app_commands
 from common import http, get_prop
@@ -21,5 +22,6 @@ async def get_interview_ctx_command(interaction: discord.Interaction, user: disc
             interview_list_str = '\n'.join(map(lambda x: f'- {x["url"]}', data))
             await interaction.followup.send(f"<@{user.id}> has {len(data)} interviews:\n" + interview_list_str)
     except Exception as e:
+        traceback.print_exc()
         await modmail_chan.send(f"<@495297618763579402> Error in `get_interview_ctx_command()` HTTP interaction: {e}", allowed_mentions=discord.AllowedMentions.all())
         await interaction.followup.send("There was an error with the command. The bot owner was notified.")

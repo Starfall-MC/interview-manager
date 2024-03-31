@@ -58,3 +58,6 @@ delete_builder:
 
 log-discord:
 	kubectl logs -f deployments/interview-manager-discord
+
+log-backend:
+	kubectl logs -f deployments/interview-manager-back
