@@ -259,6 +259,22 @@ async def minecraft_discord_to_name(request: Request, id: int) -> HTTPResponse:
     else:
         return resp_json({'status': 'ok', 'name': row[0]})
 
+@bp.get("/minecraft/name-to-discord/<name:str>")
+async def minecraft_name_to_discord(request: Request, name: str) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    # Get which MC username this user has
+    async with db.execute("SELECT discord_id FROM minecraft_usernames WHERE mc_name=?", (name,)) as cursor:
+        answer = None
+        async for row in cursor:
+            answer = row
+        
+    if answer is None:
+        return resp_json({'status': 'missing'})
+    else:
+        return resp_json({'status': 'ok', 'id': row[0]})
+
+
 @bp.post("/minecraft/discord-to-name/<id:int>")
 async def minecraft_alter_name(request: Request, id: int) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db

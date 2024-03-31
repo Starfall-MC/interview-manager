@@ -133,3 +133,26 @@ async def get_mc_name_ctx_command(interaction: discord.Interaction, user: discor
         traceback.print_exc()
         await modmail_chan.send(f"<@495297618763579402> Error in `get_mc_name_ctx_command()` HTTP interaction: {e}", allowed_mentions=discord.AllowedMentions.all())
         await interaction.followup.send("There was an error with the command. The bot owner was notified.")
+
+@app_commands.command(name="mctodiscord", description="Find a user's Discord name from their Minecraft name")
+@app_commands.guild_only()
+async def get_discord_name_command(interaction: discord.Interaction, mcname: str):
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    modmail_chan = common.client.get_channel(int(get_prop('modmail-channel')))
+    try:
+        resp = await http.get(f"https://interview.starfallmc.space/minecraft/name-to-discord/{mcname}")
+        resp.raise_for_status()
+        data = resp.json()
+        if data['status'] == 'ok':
+            await interaction.followup.send(f"`{mcname}` is <@{data['id']}>.")
+        elif data['status'] == 'missing':
+            await interaction.followup.send(f"We don't know who `{mcname}` is yet.")
+        else:
+            await modmail_chan.send(f"<@495297618763579402> In `get_discord_name_command()` got unexpected data: `{data}`", allowed_mentions=discord.AllowedMentions.all())
+            await interaction.followup.send("There was an error with the command. The bot owner was notified.")
+
+    except Exception as e:
+        traceback.print_exc()
+        await modmail_chan.send(f"<@495297618763579402> Error in `get_discord_name_command()` HTTP interaction: {e}", allowed_mentions=discord.AllowedMentions.all())
+        await interaction.followup.send("There was an error with the command. The bot owner was notified.")
+
