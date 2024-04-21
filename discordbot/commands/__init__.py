@@ -2,6 +2,7 @@ import discord
 from . import interviews
 from . import minecraft_usernames
 from . import minecraft_whitelist
+from . import members
 
 cmds = [
     interviews.get_interview_ctx_command,
@@ -12,6 +13,7 @@ cmds = [
     minecraft_whitelist.raw_add_whitelist_cmd,
     minecraft_whitelist.raw_del_whitelist_cmd,
     minecraft_whitelist.advanced_whitelist_cmd,
+    members.manual_send_member_list_command,
 ]
 
 def attach(tree: discord.app_commands.CommandTree):

@@ -10,6 +10,8 @@ from sanic.request import Request
 from private import bp as private_bp
 from public import bp as public_bp
 
+from private import reify_mc_whitelist
+
 from sanic_session import Session, InMemorySessionInterface
 from sanic_jinja2 import SanicJinja2
 
@@ -45,7 +47,25 @@ async def periodically_send_list(app):
             continue
         await asyncio.sleep(6 * 60 * 60)
 
+async def periodically_reify(app):
+    while 1:
+        try:
+            db: aiosqlite.Connection = app.ctx.db
+            reify_mc_whitelist(db)
+        except Exception as e:
+            traceback.print_exc()
+            try:
+                content = f"Failed to perform scheduled whitelist reification: {str(e)}\n<@495297618763579402> Trying again in 10 minutes"
+                await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+            except Exception as e:
+                traceback.print_exc()
+            await asyncio.sleep(10*60)
+            continue
+        await asyncio.sleep(60 * 60)
+
+
 app.add_task(periodically_send_list)
+app.add_task(periodically_reify)
 
 if __name__ == '__main__':
     # db = asyncio.run(create_tables())

@@ -21,7 +21,7 @@ def get_secret_prop(name):
 
 @bp.get('/')
 def index(request: Request) -> HTTPResponse:
-    return html("<h1>Hello Sanic!</h1>")
+    return html('<h1>Hello Sanic!</h1><p>This is the interview webapp for the StarfallMC server. Visit <a href="https://starfallmc.space">the main page</a> for more info.</p>')
 
 @bp.get('/<interview_id:int>/<token>')
 async def render_interview(request: Request, interview_id: int, token) -> HTTPResponse:
@@ -117,6 +117,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
                     if len(answer) > constraint['value']:
                         validity[question['id']] = validity.get(question['id'], []) + [f"The answer to this must be {constraint['value']} letters or shorter"]
                 elif constraint['kind'] == 'minecraftname':
+                    answer = answer.strip()
                     if not answer:
                         validity[question['id']] = validity.get(question['id'], []) + [f"Minecraft usernames must not be empty"]
                         continue
@@ -185,7 +186,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
                         if mc_username: break
                         if c['kind'] == 'minecraftname':
                             # Found the question, now get the answer
-                            mc_username = answers[q['id']]
+                            mc_username = answers[q['id']].strip()
 
             if mc_username:
                 def whitelist_in_minecraft():

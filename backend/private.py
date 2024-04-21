@@ -229,8 +229,61 @@ async def del_by_member(request: Request, id: int) -> HTTPResponse:
             await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
             await db.commit()
 
+    # If there is a known Minecraft username for this user, and there is also such a row in the ideal whitelist,
+    # then remove such from the ideal whitelist.
+    name = None
+    async with db.execute("SELECT mc_name FROM minecraft_usernames WHERE discord_id=?", (id,)) as cursor:
+        async for row in cursor:
+            name = row[0]
+            break
+    
+    is_in_whitelist = False
+    if name is not None:
+        async with db.execute("SELECT 1 FROM minecraft_whitelist_target WHERE mc_name=?", (name,)) as cursor:
+            async for row in cursor:
+                is_in_whitelist = True
+    
+    if is_in_whitelist:
+        await db.execute("DELETE FROM minecraft_whitelist_target WHERE mc_name=?", (name,))
+        content = f"The user <@{id}>, which just left, has Minecraft name `{name}`, and it was removed from the ideal Minecraft whitelist. Run `/reify` to apply it immediately, or wait up to 60 minutes."
+        await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+
     await db.commit()
     return resp_json('ok')
+
+@bp.post("/status/full-members")
+async def sync_member_list(request: Request) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    member_ids = set(request.json)
+
+    # If there are any Minecraft names in the ideal whitelist, which are associated with Discord IDs,
+    # and these Discord IDs are not members,
+    # then delete them from the whitelist.
+
+    existing_whitelists = dict()
+    async with db.execute("SELECT discord_id, minecraft_whitelist_target.mc_name FROM minecraft_whitelist_target NATURAL JOIN minecraft_usernames") as cursor:
+        async for row in cursor:
+            existing_whitelists[row[0]] = row[1]
+    
+    current_whitelisted_ids = set(existing_whitelists.keys())
+    gone_member_ids = current_whitelisted_ids - member_ids
+    gone_member_ids = list(gone_member_ids)
+
+    for id in gone_member_ids:
+        await db.execute("DELETE FROM minecraft_whitelist_target WHERE mc_name=?", (existing_whitelists[id],))
+    
+    if len(gone_member_ids)!=0:
+        content = f"The following {len(gone_member_ids)} members disappeared while we weren't looking, so they are now removed from the ideal whitelist:\n"
+        for id in gone_member_ids:
+            content += f'- <@{id}> `{existing_whitelists[id]}`\n'
+        
+        content += 'Run `/reify` now to apply the change immediately, or wait up to 60 minutes.'
+        await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
+
+    await db.commit()
+    return resp_json('ok')
+
 
 @bp.get("/interviews/by-user/<id:int>")
 async def interviews_by_user(request: Request, id: int) -> HTTPResponse:
@@ -316,10 +369,7 @@ async def apply_spelling(db: aiosqlite.Connection, correct_spelling: str):
     db.execute("UPDATE minecraft_whitelist_target SET mc_name=? WHERE mc_name=? COLLATE NOCASE", (correct_spelling, correct_spelling))
     db.execute("UPDATE minecraft_usernames SET mc_name=? WHERE mc_name=? COLLATE NOCASE", (correct_spelling, correct_spelling))
 
-@bp.post("/minecraft/ideal-whitelist/reify")
-async def reify_mc_whitelist(request: Request) -> HTTPResponse:
-    db: aiosqlite.Connection = request.app.ctx.db
-
+async def reify_mc_whitelist(db: aiosqlite.Connection) -> list:
     # Get the current active whitelist and the ideal whitelist
 
     ideal = []
@@ -373,8 +423,15 @@ async def reify_mc_whitelist(request: Request) -> HTTPResponse:
         content = f"Whitelist reification caused these commands: {reify_actions}"
         await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
         await db.commit()
+    
+    return to_apply
 
 
+@bp.post("/minecraft/ideal-whitelist/reify")
+async def reify_mc_whitelist_from_web(request: Request) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+
+    to_apply = await reify_mc_whitelist(db)
 
     return resp_json(to_apply)
 

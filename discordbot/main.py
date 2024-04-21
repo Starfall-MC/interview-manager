@@ -70,6 +70,13 @@ async def on_message(message: discord.Message):
             traceback.print_exc()
         await message.reply(get_prop('interview-resend-chat'))
 
+def split_modmail_text(text):
+    while len(text) > 2000:
+        first = text[:2000]
+        yield first
+        text = text[2000:]
+    yield text
+
 @tasks.loop(seconds=15)
 async def process_modmail():
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
@@ -79,7 +86,8 @@ async def process_modmail():
         r.raise_for_status()
         r = r.json()
         for entry in r:
-            await modmail_chan.send(entry['content'], allowed_mentions=discord.AllowedMentions.all())
+            for piece in split_modmail_text(entry['content']):
+                await modmail_chan.send(piece, allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/modmail/{entry['id']}")
             del_resp.raise_for_status()
     except Exception as e:
@@ -264,8 +272,28 @@ async def sync_banned_role():
         raise e
         
 
+@tasks.loop(minutes=30)
+async def sync_member_list():
+    # Collect a list of all active members of the guild, then send it to the server to handle.
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    guild = modmail_chan.guild
 
-@process_notifies.before_loop
+    try:
+        members = []
+        async for member in guild.fetch_members():
+            members.append(member.id)
+
+        status_resp = await http.post(f"https://interview.starfallmc.space/status/full-members", json=members)
+        status_resp.raise_for_status()
+
+    except Exception as e:
+        await modmail_chan.send(f"ERROR while syncing full member list: {repr(e)}\n<@495297618763579402>", allowed_mentions=discord.AllowedMentions(users=True))
+        traceback.print_exc()
+        raise e
+
+
+
+@sync_banned_role.before_loop
 async def before_sync_ban():
     print('waiting for bot to be ready before sync ban role...')
     await client.wait_until_ready()
@@ -276,7 +304,7 @@ async def before_sync_ban():
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.4")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.6")
 
     await app_commands.sync()
 
