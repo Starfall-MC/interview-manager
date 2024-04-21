@@ -51,7 +51,7 @@ async def periodically_reify(app):
     while 1:
         try:
             db: aiosqlite.Connection = app.ctx.db
-            reify_mc_whitelist(db)
+            await reify_mc_whitelist(db)
         except Exception as e:
             traceback.print_exc()
             try:
