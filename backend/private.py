@@ -9,6 +9,7 @@ import string
 import json
 import time
 import mcrcon
+import copy
 
 from database import InterviewStatus
 
@@ -462,3 +463,105 @@ async def del_from_ideal(request: Request, name: str) -> HTTPResponse:
 
     await db.execute("DELETE FROM minecraft_whitelist_target WHERE mc_name=?", (name,))
     return resp_json({'status': 'ok'})
+
+async def migrate_interview(db: aiosqlite.Connection, old_id: int, new_id: int) -> HTTPResponse:
+    # Fetch the old and new interview
+    old = None
+    async with db.execute("SELECT * FROM interview WHERE id=?", (old_id,)) as cursor:
+        cursor.row_factory = aiosqlite.Row
+        async for row in cursor:
+            old = row
+
+    new = None
+    async with db.execute("SELECT * FROM interview WHERE id=?", (new_id,)) as cursor:
+        cursor.row_factory = aiosqlite.Row
+        async for row in cursor:
+            new = row
+
+    if old is None:
+        return resp_json({'status': 'err', 'reason': 'missing_old_interview'})
+    
+    if new is None:
+        return resp_json({'status': 'err', 'reason': 'missing_new_interview'})
+    
+    # If the old interview has no verdict yet, cannot proceed
+    if old['verdict'] is None:
+        return resp_json({'status': 'err', 'reason': 'old_interview_no_verdict'})
+    
+    # If the new interview has been sent, cannot proceed
+    if new['status'] != InterviewStatus.WAITING_FOR_USER_TO_SUBMIT:
+        return resp_json({'status': 'err', 'reason': 'new_interview_already_sent'})
+    
+    # If the two interviews have different owners, cannot proceed
+    if old['user_id'] != new['user_id']:
+        return resp_json({'status': 'err', 'reason': 'owner_not_same'})
+
+    # For every old question and answer, we need to find a matching new question,
+    # then set the answer.
+    old_questions = json.loads(old['questions_json'])
+    new_questions = json.loads(new['questions_json'])
+    old_answers = json.loads(old['answers_json'])
+    new_answers = json.loads(new['answers_json'])
+
+    # For every old question, find a new question that matches it in every aspect except for the ID.
+    missing_old_questions = 0
+    old_new_mapping = dict()
+    for old_question in old_questions:
+        old_question = copy.deepcopy(old_question)
+        old_id = old_question['id']
+        old_question.pop('id')
+        found_id = None
+        for new_question in new_questions:
+            new_question = copy.deepcopy(new_question)
+            new_question_id = new_question['id']
+            new_question.pop('id')
+            if old_question == new_question:
+                found_id = new_question_id
+                break
+
+        if found_id is not None:
+            old_new_mapping[old_id] = found_id
+        else:
+            missing_old_questions += 1
+    
+    # Rewrite the answer IDs corresponding to the mapping
+    for old_id, new_id in old_new_mapping.items():
+        new_answers[new_id] = old_answers.get(old_id)
+
+    # Update the new interview
+    await db.execute("UPDATE interview SET answers_json=? WHERE id=?", (json.dumps(new_answers), new['id']))
+    msg = f"Interview https://interview.starfallmc.space/{new['id']}/{new['approve_token']} migrated from interview https://interview.starfallmc.space/{old['id']}/{old['approve_token']}: {missing_old_questions} old questions were missing, and {len(old_new_mapping)} were able to be copied."
+    await db.execute("INSERT INTO modmail (content) VALUES (?)", (msg,))
+    await db.commit()
+
+    return resp_json({'status': 'ok', 'missing_migrations': missing_old_questions, 'ok_migrations': len(old_new_mapping)})
+
+@bp.post("/interview/migrate")
+async def migrate_interviews(request: Request) -> HTTPResponse:
+    db: aiosqlite.Connection = request.app.ctx.db
+    old_id = request.json['old_id']
+    new_id = request.json['new_id']
+    old_edit_token = request.json['old_edit_token']
+
+    if old_id == new_id:
+        return resp_json({'status': 'err', 'reason': 'same_id'})
+
+    # Check if the old interview exists and has the given edit token
+    async with db.execute("SELECT 1 FROM interview WHERE id=? AND edit_token=?", (old_id, old_edit_token)) as cursor:
+        is_old_ok = False
+        async for _row in cursor:
+            is_old_ok = True
+        
+        if not is_old_ok:
+            return resp_json({'status': 'err', 'reason': 'old_interview_invalid'})
+
+    # Check if the new interview exists and has not been sent yet
+    async with db.execute("SELECT 1 FROM interview WHERE id=? AND status=?", (new_id, InterviewStatus.WAITING_FOR_USER_TO_SUBMIT)) as cursor:
+        is_status_ok = False
+        async for _row in cursor:
+            is_status_ok = True
+        
+        if not is_status_ok:
+            return resp_json({'status': 'err', 'reason': 'new_interview_already_sent'})
+    
+    return await migrate_interview(db, old_id, new_id)

@@ -23,21 +23,7 @@ app_commands = discord.app_commands.CommandTree(client)
 
 commands.attach(app_commands)
 
-
-
-@client.event
-async def on_message(message: discord.Message):
-    if message.author == client.user:
-        return
-
-    # Check that the message is in a channel of the matching name
-    if re.fullmatch(get_prop('verify-activation-channel-regex'), message.channel.name) is None:
-        return
-    
-    # Check that the activation phrase is used
-    if message.content.strip().lower() != get_prop('verify-activation-phrase'):
-        return
-    
+async def prepare_interview(message: discord.Message):
     j = {
         'user_id': message.author.id,
         'user_name': message.author.name,
@@ -69,6 +55,79 @@ async def on_message(message: discord.Message):
         except:
             traceback.print_exc()
         await message.reply(get_prop('interview-resend-chat'))
+
+
+@client.event
+async def on_message(message: discord.Message):
+    if message.author == client.user:
+        return
+
+    # Check that the message is in a channel of the matching name
+    if re.fullmatch(get_prop('verify-activation-channel-regex'), message.channel.name) is None:
+        return
+    
+    # Check that the activation phrase is used
+    if message.content.strip().lower() == get_prop('verify-activation-phrase'):
+        return await prepare_interview(message)
+    
+    # If it's not that, then check for whether the message contains a valid interview URL
+    url_match = re.search("https://interview.starfallmc.space/([0-9]+)/([0-9a-zA-Z]+)", message.content.strip())
+    if url_match is not None:
+        return await perform_migration(message, int(url_match.group(1)), url_match.group(2))
+    
+
+async def perform_migration(message: discord.Message, interview_id: int, token: str):
+    modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
+    async with message.channel.typing():
+        j = {
+            'old_id': interview_id,
+            'old_edit_token': token,
+            'new_id': message.channel.id
+        }
+        r = await http.post("https://interview.starfallmc.space/interview/migrate", json=j)
+
+        if r.status_code != 200:
+            await message.reply("Sorry, there was an unexpected error while migrating your interview. An admin has been notified. Please try again, or copy the info from your old interview manually.")
+            await modmail_chan.send(f"<@495297618763579402> POST /migrate returned code {r.status_code} and text: `{r.text[:1000]}`")
+            return
+        
+        resp = r.json()
+        if resp['status'] == 'err':
+            r = resp['reason']
+            msg = f'An unexpected error happened. Its internal name is: `{r}`. Please contact an admin and tell them to fix this.'
+            if r == 'same_id':
+                msg = 'You pasted a link that seems to point to this interview, not a different one. Make sure you copied the correct link.'
+            elif r == 'old_interview_invalid':
+                msg = "The link you provided doesn't seem to point to a valid interview. Please make sure that you copied the correct link."
+            elif r == 'new_interview_already_sent':
+                msg = 'This interview has already been submitted, and because of this you cannot edit it or migrate old interviews into it.'
+            elif r == 'missing_old_interview':
+                msg = "The link you provided doesn't seem to point to a valid interview. Please make sure that you copied the correct link."
+            elif r == 'missing_new_interview':
+                msg = "It seems that there is no active interview in this channel. You may want to start one before attempting a migration."
+            elif r == 'old_interview_no_verdict':
+                msg = "The interview at the link has doesn't have a verdict yet. You can only migrate interviews that have a verdict. Please wait until a verdict is set by a moderator."
+            elif r == 'owner_not_same':
+                msg = "You can only migrate an interview that you have created. Please make sure that you copied the correct link."
+
+            embed = discord.Embed(color=discord.Color.red(), title='Error while migrating interview', description=msg)
+            await message.reply(embed=embed)
+            return
+        
+        missing_migrations = resp['missing_migrations']
+        ok_migrations = resp['ok_migrations']
+
+
+        if ok_migrations == 0:
+            embed = discord.Embed(color=discord.Color.red(), title='Migration didn\'t do anything', description="You have requested a migration, but the interview questions have changed so much that there's nothing to migrate. You will need to fill the form from scratch.")
+        elif missing_migrations == 0:
+            embed = discord.Embed(color=discord.Color.green(), title='Migration OK', description=f"Your interview was migrated successfully. Your answers to the questions were copied, and you can now continue editing them.")
+        else:
+            embed = discord.Embed(color=discord.Color.yellow(), title='Migration partially succeeded', description=f"Some questions have changed since the previous interview. We successfully copied {ok_migrations} answers, but couldn't copy {missing_migrations} others. You can manually review them and edit the new interview.")
+
+        await message.reply(embed=embed)
+
+
 
 def split_modmail_text(text):
     while len(text) > 2000:
@@ -304,7 +363,7 @@ async def before_sync_ban():
 async def on_ready():
     print(f'We have logged in as {client.user}')
     modmail_chan = client.get_channel(int(get_prop('modmail-channel')))
-    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 13.6")
+    await modmail_chan.send(f"Interview Manager Discord bot is now running, version 14.2")
 
     await app_commands.sync()
 
