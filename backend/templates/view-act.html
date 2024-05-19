@@ -14,13 +14,18 @@
     <div class="p-2 flex-fill">
         <form method="POST">
             <input type="hidden" name="action" value="reject">
-            <textarea class="form-control" name="verdict" rows="3" required placeholder="Reason for rejection"></textarea>
+            <textarea class="form-control" name="verdict" rows="3" required
+                placeholder="Reason for rejection"></textarea>
+            <input type="checkbox" name="offer_try_again" id="offer-try-again" value="yes" checked="true" />
+            <label for="offer-try-again">After rejecting, should we send a message to the applicant asking them to try
+                again?</label>
+            <br />
             <button class="btn btn-danger" type="submit">Reject interview</button>
         </form>
     </div>
 </div>
 {% else %}
-    <p>You cannot set a verdict at this time, because: <code>{{why_no_verdict}}</code></p>
+<p>You cannot set a verdict at this time, because: <code>{{why_no_verdict}}</code></p>
 {% endif %}
 
 {% endblock %}

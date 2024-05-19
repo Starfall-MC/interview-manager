@@ -27,6 +27,10 @@ data:
       Unfortunately, your interview form has not been accepted. A moderator has left the following reason:
       > {{reason}}
 
+  interview-reject-try-again: |-
+    You are welcome to try submitting an interview again after fixing the issues raised above. For this, please open a new ticket and type `verify me` again.
+    You can avoid filling out the form entirely: copy the link for the old interview form and paste it in the new ticket's chat, and your old interview answers will be migrated.
+
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
     What is your Minecraft username? --- MINECRAFTNAME

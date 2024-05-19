@@ -172,8 +172,10 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
             reason = request.form.get('verdict', '').strip()
             if not reason:
                 return html("Rejection verdict cannot be empty")
+            offer_try_again = request.form.get('offer_try_again', 'no') == 'yes'
         else:
             reason = None  # No need for reason for accepting
+            offer_try_again = False  # No need for offer to try again when it's accepted
         
 
         if action == 'accept':
@@ -222,7 +224,7 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
         else:
             new_status = InterviewStatus.VERDICT_REJECT_NOT_SENT
             status_word = f'REJECTED with reason: `{reason}`'
-            verdict = {'accept': False, 'reason': reason}
+            verdict = {'accept': False, 'reason': reason, 'offer_try_again': offer_try_again}
 
         content = f"<@{user_id}>'s interview is now {status_word}"
         await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))

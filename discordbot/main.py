@@ -241,6 +241,12 @@ async def process_accepts_rejects():
                 content=f'<@{entry["user_id"]}>', allowed_mentions=discord.AllowedMentions.all(),
                 embed=discord.Embed(color=discord.Color.red(), title="Interview rejected", description=get_prop("interview-reject").replace('{{reason}}', entry['reason']))
             )
+
+            if entry['offer_try_again']:
+                await interview_chan.send(
+                    embed=discord.Embed(color=discord.Color.dark_green(), title="You can try again", description=get_prop("interview-reject-try-again"))
+                )
+
             await modmail_chan.send(f"Successfully rejected <@{entry['user_id']}>. The interview will remain available for future reference at: https://interview.starfallmc.space/{entry['channel_id']}/{entry['token']}", allowed_mentions=discord.AllowedMentions.all())
             del_resp = await http.delete(f"https://interview.starfallmc.space/pending/reject/{entry['channel_id']}")
             del_resp.raise_for_status()

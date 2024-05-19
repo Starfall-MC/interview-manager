@@ -172,7 +172,8 @@ async def pending_rejects(request: Request) -> HTTPResponse:
     db: aiosqlite.Connection = request.app.ctx.db
     async with db.execute("SELECT id, user_id, verdict, approve_token FROM interview WHERE status=?", (InterviewStatus.VERDICT_REJECT_NOT_SENT,)) as cursor:
         async for row in cursor:
-            entries.append({'channel_id': row[0], 'user_id': row[1], 'reason': json.loads(row[2])['reason'], 'token': row[3]})
+            verdict = json.loads(row[2])
+            entries.append({'channel_id': row[0], 'user_id': row[1], 'reason': verdict['reason'], 'offer_try_again': verdict['offer_try_again'], 'token': row[3]})
     return resp_json(entries)
 
 @bp.delete("/pending/reject/<id:int>")
