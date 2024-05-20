@@ -173,7 +173,7 @@ async def pending_rejects(request: Request) -> HTTPResponse:
     async with db.execute("SELECT id, user_id, verdict, approve_token FROM interview WHERE status=?", (InterviewStatus.VERDICT_REJECT_NOT_SENT,)) as cursor:
         async for row in cursor:
             verdict = json.loads(row[2])
-            entries.append({'channel_id': row[0], 'user_id': row[1], 'reason': verdict['reason'], 'offer_try_again': verdict['offer_try_again'], 'token': row[3]})
+            entries.append({'channel_id': row[0], 'user_id': row[1], 'reason': verdict['reason'], 'offer_try_again': verdict.get('offer_try_again', False), 'token': row[3]})
     return resp_json(entries)
 
 @bp.delete("/pending/reject/<id:int>")
