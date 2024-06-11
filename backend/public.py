@@ -1,4 +1,5 @@
 import datetime
+import re
 import time
 import traceback
 from sanic.response import HTTPResponse, html, json as json_resp
@@ -119,10 +120,12 @@ async def post_interview(request: Request, interview_id: int, token) -> HTTPResp
                 elif constraint['kind'] == 'minecraftname':
                     answer = answer.strip()
                     if not answer:
-                        validity[question['id']] = validity.get(question['id'], []) + [f"Minecraft usernames must not be empty"]
-                        continue
-                    if not answer.isascii():
-                        validity[question['id']] = validity.get(question['id'], []) + [f"Minecraft usernames must be ASCII-only (Latin letters and numbers)"]
+                        validity[question['id']] = validity.get(question['id'], []) + [f"You must enter your Minecraft username to be whitelisted"]
+                        continue                    
+
+                    # https://gaming.stackexchange.com/a/21815/152596 -- reference for format
+                    if not re.match(r'^[a-zA-Z0-9_]{3,16}$', answer):
+                        validity[question['id']] = validity.get(question['id'], []) + [f"The format of Minecraft usernames is: between 3 and 16 letters, numbers and underscores. Your Minecraft username is the name that appears over your head in-game. Make sure you typed it correctly."]
                         continue
 
                     api = mojang.API()
