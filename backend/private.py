@@ -57,6 +57,14 @@ async def new_interview(request: Request) -> HTTPResponse:
             # If here, then there is a matching interview.
             return sanic.json({'state': 'existing', 'edit_url': f'https://interview.starfallmc.space/{channel_id}/{row[0]}'})
 
+    # Check if there are any interviews for the same person where the status is one of the completed ones.
+    has_old_interviews = False
+    async with db.execute("SELECT status FROM interview WHERE user_id=?", (user_id,)) as cursor:
+        async for row in cursor:
+            if row[0] in InterviewStatus.list_CANNOT_BE_CHANGED:
+                has_old_interviews = True
+                break
+
     edit_token = ''.join(random.choices(string.ascii_letters, k=16))
     approve_token = ''.join(random.choices(string.ascii_letters, k=16))
     db: aiosqlite.Connection = request.app.ctx.db
@@ -74,7 +82,7 @@ async def new_interview(request: Request) -> HTTPResponse:
     content = f"The user <@{user_id}> has just created an interview. Moderators can view the progress of this interview at: https://interview.starfallmc.space/{channel_id}/{approve_token}"
     await db.execute("INSERT INTO modmail (content) VALUES (?)", (content,))
     await db.commit()
-    return sanic.json({'state': 'new', 'edit_url': f'https://interview.starfallmc.space/{channel_id}/{edit_token}'})
+    return sanic.json({'state': 'new', 'edit_url': f'https://interview.starfallmc.space/{channel_id}/{edit_token}', 'has_old_interviews': has_old_interviews})
 
 def get_questions():
     questions = []

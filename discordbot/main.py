@@ -43,8 +43,16 @@ async def prepare_interview(message: discord.Message):
         except:
             traceback.print_exc()
             await message.reply(get_prop('interview-created-dm-error-chat-prompt'))
+            if resp['has_old_interviews']:
+                embed = discord.Embed(color=discord.Color.dark_green(), title='Old interviews detected', 
+                    description=get_prop('has-old-interviews-prompt'))
+                await message.reply(embed=embed)
         else:
             await message.reply(get_prop('interview-created-chat-prompt'))
+            if resp['has_old_interviews']:
+                embed = discord.Embed(color=discord.Color.dark_green(), title='Old interviews detected', 
+                    description=get_prop('has-old-interviews-prompt'))
+                await message.reply(embed=embed)
         finally:
             interview_chan = message.channel
             number_part = interview_chan.name.split('-')[-1]
