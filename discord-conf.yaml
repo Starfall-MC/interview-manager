@@ -40,7 +40,7 @@ data:
 
   interview-questions: |-
     Do you play on Java or Bedrock? We are a Java based modded Minecraft server. If you play on bedrock, you will be unable to join us. --- (.) Java (.) Bedrock
-    What is your Minecraft username? --- MINECRAFTNAME
+    Please enter your Minecraft username so we can whitelist you when you join. If you don't know your Minecraft username, try joining the game at "whoami.starfallmc.space" to find it. --- MINECRAFTNAME
     How old are you? --- (.) Under 15 (.) 15 to 18 (.) 18+
     This section is about your experience with Discord! --- SECTION
     Do you have any friends in this Discord Server?

@@ -420,9 +420,5 @@ async def on_guild_channel_delete(channel: discord.abc.GuildChannel):
             await modmail_chan.send(f"<@495297618763579402> Cannot send backend notification that channel {channel} <#{channel.id}> was deleted: {e}")
             await asyncio.sleep(60)
 
-
-
-
-
 if __name__ == '__main__':
     client.run(token)
