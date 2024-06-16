@@ -24,6 +24,11 @@ def get_secret_prop(name):
 def index(request: Request) -> HTTPResponse:
     return html('<h1>Hello Sanic!</h1><p>This is the interview webapp for the StarfallMC server. Visit <a href="https://starfallmc.space">the main page</a> for more info.</p>')
 
+@bp.get('/healthz')
+def healthz(request: Request) -> HTTPResponse:
+    # TODO: add health checks, for example Discord bot connection
+    return html('OK')
+
 @bp.get('/<interview_id:int>/<token>')
 async def render_interview(request: Request, interview_id: int, token) -> HTTPResponse:
     jinja: sanic_jinja2.SanicJinja2 = request.app.ctx.jinja
